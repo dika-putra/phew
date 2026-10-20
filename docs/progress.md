@@ -19,3 +19,11 @@ Next step: Write M2 plan (path targets, Receipt, plan and execute). Carry the 5 
 | 2026-10-21 | M1 | Task 6: catalog, phew list | Add built-in catalog and phew list | editors split per editor; some bundle ids unverified (see code comments) |
 | 2026-10-21 | M1 | Task 7: milestone check | Finish M1 | release build has no warnings; 34 tests pass; final review pending |
 | 2026-10-21 | M1 | Final review fixes | Fix review findings in PathGuard and config | 5 Important fixed; 5 minors deferred to M2 (see M2 plan) |
+
+## Carry into M2 (deferred from the M1 review)
+
+- PathGuard checks against the union of all roots. Build one guard per target in M2.
+- Custom paths `~/Library`, `~/Documents`, `~/Desktop`, `~/.ssh` are accepted. Consider refusing them.
+- DiskSize returns 0 with an empty `unreadable` list when the root itself cannot be read (TCC). Report it as unreadable.
+- Shell searches empty or relative `PATH` entries. Skip entries that do not start with `/`.
+- Shell has no timeout. Add one before M2 runs `xcrun` and `docker`.
