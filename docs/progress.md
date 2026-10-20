@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m2-clean.md
 Branch: m2-clean
-Next step: Task 2, Step 1 (M2)
+Next step: Task 3, Step 1 (M2)
 
 ## Carry into M2 (deferred from the M1 review)
 
@@ -25,3 +25,4 @@ Done in M2 Task 1, except one guard per target (M2 Task 5).
 | 2026-10-21 | M1 | Final review fixes | Fix review findings in PathGuard and config | 5 Important fixed; 5 minors deferred to M2 (see M2 plan) |
 | 2026-10-21 | M2 | Task 0: plan | Add M2 plan | m1-core merged to main |
 | 2026-10-21 | M2 | Task 1: hardening | Harden Shell, DiskSize and PathGuard | M1 review minors done |
+| 2026-10-21 | M2 | Task 2: RunningCheck | Add RunningCheck | proc entries support Name=pattern |

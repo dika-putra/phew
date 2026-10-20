@@ -50,19 +50,19 @@ public enum BuiltinCatalog {
         // Android
         PathTarget(id: "gradle", group: "Android", title: "Gradle caches", tier: .redownload,
                    paths: ["~/.gradle/caches", "~/.gradle/wrapper/dists", "~/.gradle/daemon"],
-                   skipIfRunning: [androidStudio, "proc:GradleDaemon"]),
+                   skipIfRunning: [androidStudio, "proc:Gradle=GradleDaemon"]),
         PathTarget(id: "android.systemimages", group: "Android", title: "Emulator system images", tier: .redownload,
                    flags: [.heavy], paths: ["~/Library/Android/sdk/system-images"],
-                   skipIfRunning: [androidStudio, "proc:qemu-system"]),
+                   skipIfRunning: [androidStudio, "proc:Android emulator=qemu-system"]),
         PathTarget(id: "android.avd", group: "Android", title: "Emulators (AVDs)", tier: .dataLoss,
                    flags: [.heavy], paths: ["~/.android/avd"],
-                   skipIfRunning: [androidStudio, "proc:qemu-system"]),
+                   skipIfRunning: [androidStudio, "proc:Android emulator=qemu-system"]),
 
         // Flutter
         PathTarget(id: "dart.pubcache", group: "Flutter", title: "Pub cache", tier: .redownload,
                    paths: ["~/.pub-cache"]),
         PathTarget(id: "dart.analysis", group: "Flutter", title: "Dart analysis cache", tier: .regenerates,
-                   paths: ["~/.dartServer"], skipIfRunning: ["proc:dart.*language-server"]),
+                   paths: ["~/.dartServer"], skipIfRunning: ["proc:Dart analysis server=dart.*language-server"]),
 
         // Node
         PathTarget(id: "yarn", group: "Node", title: "Yarn cache", tier: .redownload,
@@ -110,7 +110,7 @@ public enum BuiltinCatalog {
         editor("zed", "Zed", folder: "Zed", bundleID: "dev.zed.Zed"), // unverified bundle id
         PathTarget(id: "editors.jetbrains", group: "Editors", title: "JetBrains caches and logs", tier: .regenerates,
                    paths: ["~/Library/Caches/JetBrains", "~/Library/Logs/JetBrains"],
-                   skipIfRunning: ["proc:/Contents/MacOS/(idea|webstorm|pycharm|goland|phpstorm|rider|clion|rubymine)"]),
+                   skipIfRunning: ["proc:JetBrains IDE=/Contents/MacOS/(idea|webstorm|pycharm|goland|phpstorm|rider|clion|rubymine)"]),
 
         // Containers
         PathTarget(id: "orbstack", group: "Containers", title: "OrbStack logs and cache", tier: .regenerates,

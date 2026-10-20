@@ -39,7 +39,7 @@ private func target(_ id: String) -> PathTarget? { builtin.first { $0.id == id }
     #expect(target("android.systemimages")?.flags.contains(.heavy) == true)
     for id in ["maven", "nuget", "macos.caches"] { #expect(target(id)?.flags.contains(.optIn) == true, "\(id)") }
     #expect(target("xcode.deriveddata")?.skipIfRunning.contains("com.apple.dt.Xcode") == true)
-    #expect(target("gradle")?.skipIfRunning.contains("proc:GradleDaemon") == true)
+    #expect(target("gradle")?.skipIfRunning.contains("proc:Gradle=GradleDaemon") == true)
     #expect(target("macos.caches")?.contents == true)
     #expect(target("macos.logs")?.contents == true)
 }
