@@ -234,6 +234,7 @@ Pin files are searched in the configured project roots. Removal for version mana
   "version": 1,
   "projectRoots": ["~/Documents/Projects"],
   "dormantDays": 14,
+  "lowSpaceAlert": { "enabled": true, "thresholdGB": 20 },
   "customTargets": [
     { "id": "custom.unity-cache", "title": "Unity cache", "paths": ["~/Library/Unity/cache"], "tier": "redownload" }
   ]
@@ -254,7 +255,7 @@ Popover, top to bottom:
 3. Group list (Xcode, Android, Flutter, Node, Python, PHP, Ruby, Java, Go, Rust, Docker, Editors, Versions, Projects, Custom), each with size. Click opens the group.
 4. Group view: one row per item with checkbox, title, size, last used, tier badge, FDA badge, and a Clean button. Version manager rows show "used by N projects" and a lock icon. Project rows expand to their artifacts.
 5. Footer when something is checked: "Clean selected: N items, X GB".
-6. Gear: settings (project roots, dormant days, launch at login, custom targets, FDA status).
+6. Gear: settings (project roots, dormant days, launch at login, low space alert on/off and threshold, custom targets, FDA status, install CLI).
 
 Clean flow inside the popover (no separate window):
 - In-use items are never cleaned. Per-item Clean on an in-use item shows an info message instead of a confirmation: what is running and what to do ("Xcode is running. Quit Xcode to clean DerivedData."). Bulk Clean leaves in-use items out and lists them in the confirmation under "Skipped, in use" with the same message. If an app starts between the confirmation and the delete, the item is skipped and listed in the receipt as "skipped, in use", not as a failure.
@@ -271,6 +272,12 @@ Scanning:
 - Only one scan at a time; Refresh during a scan does nothing. Old results stay visible until the new scan finishes.
 - Results are cached on disk (`~/Library/Caches/com.dikaputra.phew/scan.json`) so the popover shows numbers right after launch.
 - After a clean, rescan only the touched targets.
+
+Low space notification:
+- Local notification (`UNUserNotificationCenter`) when available space drops below a threshold. Default 20 GB, on by default, both changeable in settings. Permission is asked on first run.
+- Checked every 15 minutes (reading free space is cheap, no scan) and after every scan.
+- Notifies once per drop. It re-arms only after available space goes back above threshold plus 5 GB, so it does not repeat while the disk stays low.
+- Text: "Only 14.2 GB left. Phew can free about 38 GB." The reclaimable number comes from the last scan, without `dataLoss` and `optIn` items. Clicking the notification opens the popover.
 
 ## 12. CLI
 
@@ -308,6 +315,7 @@ Use temp folders. Never touch real data.
 - Version managers: pin file parsing per tool, one project counted once, active and default locked.
 - Parsers with captured sample output: `docker system df`, `simctl runtime list -j`, `simctl list devices -j`, `fvm list`, `rustup toolchain list`, `pyenv versions`.
 - Config: invalid custom targets are reported, not loaded.
+- Low space alert fires once when crossing the threshold and re-arms only above threshold plus 5 GB.
 - In-use items are left out of a bulk plan and listed as skipped; an app starting after the plan makes the item "skipped, in use" in the receipt.
 - CLI: `phew --help` and `phew help <command>` exit 0 and include the examples; unknown ids give suggestions.
 - Tests that call real tools only run with `PHEW_REAL_TOOLS=1`.
@@ -319,7 +327,7 @@ Use temp folders. Never touch real data.
 | 1 | Package skeleton, Shell, DiskSize, PathGuard, Config, catalog loader | tests pass |
 | 2 | Path targets (section 8), Receipt, plan and execute | sizes match `everclean.sh` for shared targets, except where section 7 says the script is wrong (runtimes use `sizeBytes`, mounted volumes are not counted); tests pass |
 | 3 | Project scanner with all rules, git-ignore check, dormant | `phew scan` lists projects under a fixture tree correctly |
-| 4 | Menu bar app MVP: header, summary, groups, item rows, per-item and bulk clean with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan | can clean a fixture target from the popover and the receipt matches the measured change |
+| 4 | Menu bar app MVP: header, summary, groups, item rows, per-item and bulk clean with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan, low space notification | can clean a fixture target from the popover and the receipt matches the measured change |
 | 5 | Custom targets: simulators, runtimes, dyld, Docker, npm, pnpm, go, cargo; version managers | same behavior as `everclean.sh` for the ones it has |
 | 6 | CLI polish (`--json`, `versions`, `list`, help text and examples for every command, install from the app and `make install`), README with screenshots and a CLI section, `NOTICE`, release zip with SHA-256 | clean install from the zip works on a second Mac or user account |
 
@@ -327,6 +335,3 @@ Use temp folders. Never touch real data.
 
 No App Store (no sandbox: needs `~/Library`, runs `docker` and `xcrun`). Repo private until M6, then public under MIT. App: zip on GitHub Releases with SHA-256, README explains `xattr -cr`. CLI: build from source, Homebrew tap later. Whether Homebrew still accepts casks that are not notarized is unverified; check before relying on it.
 
-## 16. Later, not agreed yet
-
-- Notification when available space drops below a threshold.
