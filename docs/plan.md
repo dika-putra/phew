@@ -66,7 +66,7 @@ Flags on an item, independent of tier:
 - `needsAdmin`: root-owned (simulator dyld cache). Separate confirmation, admin prompt.
 - `needsFDA`: path is protected by TCC. FDA badge.
 - `optIn`: never preselected, even if the tier would allow it (Maven, NuGet, Other caches).
-- `skipIfRunning`: list of bundle ids or process patterns. If one is running, the item shows "in use" and cannot be cleaned.
+- `skipIfRunning`: list of bundle ids or process patterns. If one is running, the item is not cleaned. The row shows an "in use" badge with the app name, and the Clean flow tells the user why (section 11).
 
 Preselection rule: an item is preselected only if it is `regenerates` or `redownload`, not `heavy`, not `needsAdmin`, not `optIn`, and (for project items) the project is dormant. Dormant means no file in the project changed in the last `dormantDays` (default 14) days, measured on the project folder excluding the artifact folders.
 
@@ -257,6 +257,7 @@ Popover, top to bottom:
 6. Gear: settings (project roots, dormant days, launch at login, custom targets, FDA status).
 
 Clean flow inside the popover (no separate window):
+- In-use items are never cleaned. Per-item Clean on an in-use item shows an info message instead of a confirmation: what is running and what to do ("Xcode is running. Quit Xcode to clean DerivedData."). Bulk Clean leaves in-use items out and lists them in the confirmation under "Skipped, in use" with the same message. If an app starts between the confirmation and the delete, the item is skipped and listed in the receipt as "skipped, in use", not as a failure.
 - Clean (per item or bulk) shows an inline confirmation view: list of items, total size, tier per item. `dataLoss` items get a red line saying what is lost. `needsAdmin` items are confirmed and run separately with the admin prompt (`osascript ... with administrator privileges`).
 - During the clean: progress per item. The popover may close; the clean continues and the menu bar icon shows activity.
 - Receipt: "Phew. 42.3 GB freed." using measured bytes, plus failures per item with the reason. Volume free space before and after.
@@ -273,10 +274,26 @@ Scanning:
 
 ## 12. CLI
 
+The CLI is a first-class way to use Phew, not only a dev tool. Same core, same safety rules, same in-use behavior as the app (in-use items are listed as skipped with the reason).
+
+Install:
+- From the app: Settings has "Install command line tool", which links the `phew` binary inside the app bundle to `~/.local/bin/phew` (no admin) and says how to add `~/.local/bin` to `PATH` if it is missing.
+- From source: `make install` builds release and copies `phew` to `~/.local/bin`.
+- Homebrew tap later (section 15).
+
+Help (swift-argument-parser generates the structure; every command fills in `abstract`, `discussion` with at least two examples, and help text for each option):
+- `phew --help` and `phew help`: short description, list of commands, examples (`phew scan`, `phew clean xcode.deriveddata --dry-run`, `phew versions nvm`).
+- `phew <command> --help` and `phew help <command>`: usage, options, examples.
+- `phew --version`.
+- `phew list [--group <g>]`: every target id with title, tier and flags, so users can find ids for `clean`.
+- Unknown id in `clean`: error names the id and suggests close matches from `phew list`.
+
+Commands:
 - `phew scan [--json] [--group <g>]`: summary per group, then items. JSON schema is versioned.
 - `phew clean <id...> [--dry-run | --yes]`: shows the plan, asks for confirmation unless `--yes`.
 - `phew versions <fvm|nvm|rustup|pyenv|sdkman|mise|runtimes>`: interactive picker like the old script (numbers, `all`, `unused`).
 - `phew config [--edit]`: print the config path and roots.
+- `phew list`: see Help above.
 - Spinner on stderr only when it is a terminal. Exit code non-zero when something failed to delete.
 
 ## 13. Tests
@@ -291,6 +308,8 @@ Use temp folders. Never touch real data.
 - Version managers: pin file parsing per tool, one project counted once, active and default locked.
 - Parsers with captured sample output: `docker system df`, `simctl runtime list -j`, `simctl list devices -j`, `fvm list`, `rustup toolchain list`, `pyenv versions`.
 - Config: invalid custom targets are reported, not loaded.
+- In-use items are left out of a bulk plan and listed as skipped; an app starting after the plan makes the item "skipped, in use" in the receipt.
+- CLI: `phew --help` and `phew help <command>` exit 0 and include the examples; unknown ids give suggestions.
 - Tests that call real tools only run with `PHEW_REAL_TOOLS=1`.
 
 ## 14. Milestones
@@ -302,7 +321,7 @@ Use temp folders. Never touch real data.
 | 3 | Project scanner with all rules, git-ignore check, dormant | `phew scan` lists projects under a fixture tree correctly |
 | 4 | Menu bar app MVP: header, summary, groups, item rows, per-item and bulk clean with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan | can clean a fixture target from the popover and the receipt matches the measured change |
 | 5 | Custom targets: simulators, runtimes, dyld, Docker, npm, pnpm, go, cargo; version managers | same behavior as `everclean.sh` for the ones it has |
-| 6 | CLI polish (`--json`, `versions`), README with screenshots, `NOTICE`, release zip with SHA-256 | clean install from the zip works on a second Mac or user account |
+| 6 | CLI polish (`--json`, `versions`, `list`, help text and examples for every command, install from the app and `make install`), README with screenshots and a CLI section, `NOTICE`, release zip with SHA-256 | clean install from the zip works on a second Mac or user account |
 
 ## 15. Distribution
 
