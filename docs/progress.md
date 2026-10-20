@@ -2,9 +2,9 @@
 
 Resume here: read this file, then the plan named in "Current plan", then continue at "Next step".
 
-Current plan: docs/superpowers/plans/2026-10-21-m1-core.md
-Branch: m1-core
-Next step: Write M2 plan (path targets, Receipt, plan and execute). Carry the 5 deferred minors from the M1 review into it.
+Current plan: docs/superpowers/plans/2026-10-21-m2-clean.md
+Branch: m2-clean
+Next step: Task 1, Step 1 (M2)
 
 ## Log
 
@@ -27,3 +27,4 @@ Next step: Write M2 plan (path targets, Receipt, plan and execute). Carry the 5 
 - DiskSize returns 0 with an empty `unreadable` list when the root itself cannot be read (TCC). Report it as unreadable.
 - Shell searches empty or relative `PATH` entries. Skip entries that do not start with `/`.
 - Shell has no timeout. Add one before M2 runs `xcrun` and `docker`.
+| 2026-10-21 | M2 | Task 0: plan | Add M2 plan | m1-core merged to main |
