@@ -23,12 +23,13 @@ struct ScanCommand: AsyncParsableCommand {
     var json = false
 
     func run() async throws {
-        let targets = loadTargets().filter { group == nil || $0.group.caseInsensitiveCompare(group!) == .orderedSame }
+        let all = loadTargets()
+        let targets = all.filter { group == nil || $0.group.caseInsensitiveCompare(group!) == .orderedSame }
         if targets.isEmpty, let group {
             throw ValidationError("No group named \"\(group)\". Run `phew list` to see all groups.")
         }
         status("Scanning \(targets.count) targets…")
-        let items = await TargetScanner().scan(targets)
+        let items = await TargetScanner().scan(targets, alsoOwnedBy: all)
         let available = DiskSize.available()
         if json {
             FileHandle.standardOutput.write(try scanJSON(items, available: available))

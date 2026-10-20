@@ -82,7 +82,8 @@ struct CleanCommand: AsyncParsableCommand {
                 print("  \(pad(e.title, 28))  skipped: \(reason)")
             } else {
                 print("  \(pad(e.title, 28))  \(formatBytes(e.measured))")
-                e.failures.forEach { print("    failed: \($0)") }
+                e.failures.prefix(5).forEach { print("    failed: \($0)") }
+                if e.failures.count > 5 { print("    and \(e.failures.count - 5) more") }
             }
         }
         print("Available: \(formatBytes(receipt.freeBefore)) -> \(formatBytes(receipt.freeAfter))")

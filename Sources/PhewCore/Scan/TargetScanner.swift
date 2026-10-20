@@ -31,6 +31,8 @@ public struct TargetScanner: Sendable {
     private func scan(_ target: PathTarget, excluding others: [URL]) -> Item? {
         let paths = target.paths.map { expandTilde($0, home: home).standardizedFileURL }
             .filter { FileManager.default.fileExists(atPath: $0.path) }
+            // A target folder that is a symlink (moved to another disk on purpose) is left alone.
+            .filter { (try? $0.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true }
         guard !paths.isEmpty else { return nil }
 
         var urls = paths
