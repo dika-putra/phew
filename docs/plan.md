@@ -255,7 +255,7 @@ Popover, top to bottom:
 3. Group list (Xcode, Android, Flutter, Node, Python, PHP, Ruby, Java, Go, Rust, Docker, Editors, Versions, Projects, Custom), each with size. Click opens the group.
 4. Group view: one row per item with checkbox, title, size, last used, tier badge, FDA badge, and a Clean button. Version manager rows show "used by N projects" and a lock icon. Project rows expand to their artifacts.
 5. Footer when something is checked: "Clean selected: N items, X GB".
-6. Gear: settings (project roots, dormant days, launch at login, low space alert on/off and threshold, custom targets, FDA status, install CLI).
+6. Gear: settings (appearance, project roots, dormant days, launch at login, low space alert on/off and threshold, custom targets, FDA status, install CLI).
 
 Clean flow inside the popover (no separate window):
 - In-use items are never cleaned. Per-item Clean on an in-use item shows an info message instead of a confirmation: what is running and what to do ("Xcode is running. Quit Xcode to clean DerivedData."). Bulk Clean leaves in-use items out and lists them in the confirmation under "Skipped, in use" with the same message. If an app starts between the confirmation and the delete, the item is skipped and listed in the receipt as "skipped, in use", not as a failure.
@@ -272,6 +272,13 @@ Scanning:
 - Only one scan at a time; Refresh during a scan does nothing. Old results stay visible until the new scan finishes.
 - Results are cached on disk (`~/Library/Caches/com.dikaputra.phew/scan.json`) so the popover shows numbers right after launch.
 - After a clean, rescan only the touched targets.
+
+Appearance:
+- Light and dark mode. Default follows the system; settings has System, Light, Dark (applied with `preferredColorScheme`). Colors come from semantic colors and asset catalog colors with light and dark variants, never hardcoded. Tier badges keep the same hue in both modes with contrast checked in each.
+
+About (bottom of settings):
+- App name, version and build (from `CFBundleShortVersionString` and `CFBundleVersion`), author "Dika Putra", and a "View on GitHub" link to `https://github.com/dika-putra/phew` that opens in the browser. Also "Report an issue" linking to the repo issues page. The repo is private until M6, so the links only work for others after it goes public.
+- The CLI shows the same in `phew --version` (version and repo URL).
 
 Low space notification:
 - Local notification (`UNUserNotificationCenter`) when available space drops below a threshold. Default 20 GB, on by default, both changeable in settings. Permission is asked on first run.
@@ -327,7 +334,7 @@ Use temp folders. Never touch real data.
 | 1 | Package skeleton, Shell, DiskSize, PathGuard, Config, catalog loader | tests pass |
 | 2 | Path targets (section 8), Receipt, plan and execute | sizes match `everclean.sh` for shared targets, except where section 7 says the script is wrong (runtimes use `sizeBytes`, mounted volumes are not counted); tests pass |
 | 3 | Project scanner with all rules, git-ignore check, dormant | `phew scan` lists projects under a fixture tree correctly |
-| 4 | Menu bar app MVP: header, summary, groups, item rows, per-item and bulk clean with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan, low space notification | can clean a fixture target from the popover and the receipt matches the measured change |
+| 4 | Menu bar app MVP: light and dark mode, About, header, summary, groups, item rows, per-item and bulk clean with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan, low space notification | can clean a fixture target from the popover and the receipt matches the measured change |
 | 5 | Custom targets: simulators, runtimes, dyld, Docker, npm, pnpm, go, cargo; version managers | same behavior as `everclean.sh` for the ones it has |
 | 6 | CLI polish (`--json`, `versions`, `list`, help text and examples for every command, install from the app and `make install`), README with screenshots and a CLI section, `NOTICE`, release zip with SHA-256 | clean install from the zip works on a second Mac or user account |
 
