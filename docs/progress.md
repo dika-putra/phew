@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m1-core.md
 Branch: m1-core
-Next step: Task 7, Step 1
+Next step: Final review of m1-core, then write M2 plan
 
 ## Log
 
@@ -17,3 +17,4 @@ Next step: Task 7, Step 1
 | 2026-10-21 | M1 | Task 4: PathGuard | Add PathGuard |  |
 | 2026-10-21 | M1 | Task 5: Config | Add shared config |  |
 | 2026-10-21 | M1 | Task 6: catalog, phew list | Add built-in catalog and phew list | editors split per editor; some bundle ids unverified (see code comments) |
+| 2026-10-21 | M1 | Task 7: milestone check | Finish M1 | release build has no warnings; 34 tests pass; final review pending |
