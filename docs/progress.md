@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m2-clean.md
 Branch: m2-clean
-Next step: Task 7, Step 1 (M2)
+Next step: Task 8, Step 1 (M2)
 
 ## Carry into M2 (deferred from the M1 review)
 
@@ -30,3 +30,4 @@ Done in M2 Task 1, except one guard per target (M2 Task 5).
 | 2026-10-21 | M2 | Task 4: Planner | Add Planner |  |
 | 2026-10-21 | M2 | Task 5: Executor, Receipt | Add Executor and Receipt | one PathGuard per target |
 | 2026-10-21 | M2 | Task 6: phew scan | Add phew scan | real scan 25.58 GB in 15 s |
+| 2026-10-21 | M2 | Task 7: phew clean | Add phew clean | verified on ~/.phew-m2-test; config restored |

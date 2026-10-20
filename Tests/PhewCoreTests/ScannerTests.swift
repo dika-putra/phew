@@ -89,3 +89,14 @@ func target(_ id: String, _ paths: [String], tier: Tier = .regenerates, flags: S
         #expect(await !pre(.regenerates, [.needsAdmin]))
     }
 }
+
+@Test func exclusionUsesTargetsOutsideTheScan() async throws {
+    try await withTempDirAsync { home in
+        try writeFile(home.appending(path: "C/Homebrew/f"), bytes: 10)
+        try writeFile(home.appending(path: "C/other/f"), bytes: 10)
+        let items = await TargetScanner(home: home, running: notRunning).scan(
+            [target("c", ["~/C"], contents: true)], alsoOwnedBy: [target("brew", ["~/C/Homebrew"])])
+        #expect(items.map(\.id) == ["c"])
+        #expect(items[0].urls.map(\.lastPathComponent) == ["other"])
+    }
+}

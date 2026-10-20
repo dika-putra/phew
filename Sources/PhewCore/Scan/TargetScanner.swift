@@ -10,12 +10,15 @@ public struct TargetScanner: Sendable {
         self.running = running
     }
 
-    public func scan(_ targets: [PathTarget]) async -> [Item] {
+    /// `alsoOwnedBy` lists targets that are not measured but whose folders stay out of `contents` targets.
+    public func scan(_ targets: [PathTarget], alsoOwnedBy extra: [PathTarget] = []) async -> [Item] {
+        let extraOwned = extra.filter { e in !targets.contains { $0.id == e.id } }
+            .flatMap { t in t.paths.map { expandTilde($0, home: home).standardizedFileURL } }
         let owned = targets.map { t in t.paths.map { expandTilde($0, home: home).standardizedFileURL } }
         let ownCache = home.appending(path: "Library/Caches/com.dikaputra.phew").standardizedFileURL
         let results = await withTaskGroup(of: (Int, Item?).self) { group in
             for (index, target) in targets.enumerated() {
-                let others = owned.enumerated().filter { $0.offset != index }.flatMap(\.element) + [ownCache]
+                let others = owned.enumerated().filter { $0.offset != index }.flatMap(\.element) + extraOwned + [ownCache]
                 group.addTask { (index, scan(target, excluding: others)) }
             }
             var out: [(Int, Item?)] = []
