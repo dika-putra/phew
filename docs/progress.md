@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m2-clean.md
 Branch: m2-clean
-Next step: Task 4, Step 1 (M2)
+Next step: Task 5, Step 1 (M2)
 
 ## Carry into M2 (deferred from the M1 review)
 
@@ -27,3 +27,4 @@ Done in M2 Task 1, except one guard per target (M2 Task 5).
 | 2026-10-21 | M2 | Task 1: hardening | Harden Shell, DiskSize and PathGuard | M1 review minors done |
 | 2026-10-21 | M2 | Task 2: RunningCheck | Add RunningCheck | proc entries support Name=pattern |
 | 2026-10-21 | M2 | Task 3: Item, TargetScanner | Add Scanner | named TargetScanner (Foundation.Scanner clash) |
+| 2026-10-21 | M2 | Task 4: Planner | Add Planner |  |
