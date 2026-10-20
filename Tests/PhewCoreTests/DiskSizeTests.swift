@@ -55,3 +55,14 @@ private let MiB = 1_048_576
 @Test func availableIsPositive() {
     #expect(DiskSize.available() > 0)
 }
+
+@Test func unreadableRootIsReported() throws {
+    try withTempDir { dir in
+        let locked = dir.appending(path: "locked")
+        let inner = locked.appending(path: "inner")
+        try writeFile(inner.appending(path: "f"), bytes: 4096)
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: locked.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: locked.path) }
+        #expect(DiskSize.allocated(inner).unreadable == [inner])
+    }
+}

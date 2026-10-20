@@ -27,3 +27,23 @@ import Testing
 @Test func unknownToolThrows() async {
     await #expect(throws: ShellError.self) { try await Shell.run("phew-no-such-tool") }
 }
+
+@Test func timesOut() async {
+    await #expect(throws: ShellError.timedOut("/bin/sleep")) {
+        try await Shell.run("/bin/sleep", ["5"], timeout: .milliseconds(200))
+    }
+}
+
+@Test func whichIgnoresRelativePathEntries() throws {
+    try withTempDir { dir in
+        let tool = dir.appending(path: "phew-rel")
+        try "#!/bin/sh\n".write(to: tool, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tool.path)
+        #expect(Shell.which("phew-rel", searchPath: [dir.path]) == tool)
+        let relative = String(dir.path.dropFirst())  // "var/folders/..." relative to "/"
+        let cwd = FileManager.default.currentDirectoryPath
+        FileManager.default.changeCurrentDirectoryPath("/")
+        defer { FileManager.default.changeCurrentDirectoryPath(cwd) }
+        #expect(Shell.which("phew-rel", searchPath: ["", ".", relative]) == nil)
+    }
+}

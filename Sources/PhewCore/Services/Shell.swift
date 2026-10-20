@@ -8,6 +8,12 @@ public struct ShellResult: Sendable {
 
 public enum ShellError: Error, Equatable {
     case notFound(String)
+    case timedOut(String)
+}
+
+private final class ProcessBox: @unchecked Sendable {
+    let process: Process
+    init(_ process: Process) { self.process = process }
 }
 
 public enum Shell {
@@ -16,7 +22,8 @@ public enum Shell {
     public static func run(
         _ executable: String,
         _ args: [String] = [],
-        environment: [String: String]? = nil
+        environment: [String: String]? = nil,
+        timeout: Duration = .seconds(600)
     ) async throws -> ShellResult {
         guard let url = executable.contains("/") ? URL(fileURLWithPath: executable) : which(executable),
               FileManager.default.isExecutableFile(atPath: url.path) else {
@@ -33,11 +40,22 @@ public enum Shell {
         process.standardInput = FileHandle.nullDevice
         try process.run()
 
+        // ponytail: kills only the direct child; a grandchild holding the pipe open still blocks.
+        let box = ProcessBox(process)
+        let timer = Task.detached { () -> Bool in
+            try? await Task.sleep(for: timeout)
+            guard !Task.isCancelled, box.process.isRunning else { return false }
+            box.process.terminate()
+            return true
+        }
+
         // Drain both pipes concurrently: a child that fills one pipe buffer blocks otherwise.
         async let outData = Task.detached { out.fileHandleForReading.readDataToEndOfFile() }.value
         async let errData = Task.detached { err.fileHandleForReading.readDataToEndOfFile() }.value
         let (o, e) = await (outData, errData)
         process.waitUntilExit()
+        timer.cancel()
+        if await timer.value { throw ShellError.timedOut(executable) }
         return ShellResult(
             status: process.terminationStatus,
             stdout: String(decoding: o, as: UTF8.self),
@@ -48,9 +66,14 @@ public enum Shell {
     /// GUI apps start with a minimal PATH, so common tool folders are searched too.
     public static func which(_ tool: String) -> URL? {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let path = ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":").map(String.init) ?? []
+        let path = ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":", omittingEmptySubsequences: false).map(String.init) ?? []
         let extra = ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.cargo/bin", "\(home)/.local/bin"]
-        for dir in path + extra {
+        return which(tool, searchPath: path + extra)
+    }
+
+    /// Only absolute entries are searched: an empty or relative PATH entry means the cwd.
+    static func which(_ tool: String, searchPath: [String]) -> URL? {
+        for dir in searchPath where dir.hasPrefix("/") {
             let candidate = URL(fileURLWithPath: dir).appending(path: tool)
             if FileManager.default.isExecutableFile(atPath: candidate.path) { return candidate }
         }

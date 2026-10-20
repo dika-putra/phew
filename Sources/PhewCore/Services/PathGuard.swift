@@ -9,6 +9,10 @@ public enum PathGuardError: Error, Equatable {
 
 /// Last check before anything is deleted. A path must sit inside an allowed root,
 /// judged by its real location (parent symlinks resolved), and never be a protected folder.
+private let personalFolders: Set<String> = [
+    "library", "documents", "desktop", "downloads", "pictures", "movies", "music", "applications", ".config",
+]
+
 public struct PathGuard: Sendable {
     private let roots: [[String]]
     private let home: URL
@@ -49,6 +53,11 @@ public struct PathGuard: Sendable {
         let c = url.standardizedFileURL.pathComponents.map { $0.lowercased() }
         let h = home.standardizedFileURL.pathComponents.map { $0.lowercased() }
         if h.starts(with: c) { return true } // "/", home, or an ancestor
+        if c.starts(with: h), c.count > h.count {
+            let first = c[h.count]
+            if first == ".ssh" || first == ".gnupg" { return true }
+            if c.count == h.count + 1, personalFolders.contains(first) { return true }
+        }
         if c.starts(with: ["/", "system"]) { return true }
         if c.starts(with: ["/", "library"]) {
             return !c.starts(with: ["/", "library", "developer", "coresimulator", "caches"])

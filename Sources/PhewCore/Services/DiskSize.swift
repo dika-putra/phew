@@ -15,7 +15,14 @@ public enum DiskSize {
     /// symlinks are not followed and folders on another volume (mounts) are not entered.
     public static func allocated(_ url: URL) -> SizeResult {
         var result = SizeResult(bytes: 0, unreadable: [])
-        guard let root = try? url.resourceValues(forKeys: Set(keys)) else { return result }
+        let root: URLResourceValues
+        do {
+            root = try url.resourceValues(forKeys: Set(keys))
+        } catch {
+            // Missing is size 0; anything else (permissions, privacy protection) is unreadable.
+            if (error as? CocoaError)?.code != .fileReadNoSuchFile { result.unreadable = [url] }
+            return result
+        }
         if root.isSymbolicLink == true { return result }
         let rootVolume = root.volumeIdentifier as? NSObject
         var seen = Set<NSObject>()

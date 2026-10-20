@@ -70,3 +70,13 @@ private func setup(_ body: (URL, URL, PathGuard) throws -> Void) throws {
         #expect(throws: PathGuardError.outsideRoots(url.path)) { try guard_.check(url) }
     }
 }
+
+@Test func protectsPersonalFolders() {
+    let home = URL(fileURLWithPath: "/Users/phew-test")
+    for p in ["Documents", "Library", "Desktop", ".config", ".ssh/id_ed25519", ".gnupg"] {
+        #expect(PathGuard.isForbidden(home.appending(path: p), home: home), "\(p)")
+    }
+    for p in ["Library/Caches", "Documents/x", ".config/phew"] {
+        #expect(!PathGuard.isForbidden(home.appending(path: p), home: home), "\(p)")
+    }
+}
