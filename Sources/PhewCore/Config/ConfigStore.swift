@@ -4,6 +4,14 @@ public struct ConfigIssue: Sendable, Equatable {
     public let message: String
 }
 
+public enum ConfigError: Error, Equatable {
+    case protectedRoot(String)
+}
+
+private struct RawTargets: Decodable {
+    let customTargets: [Lossy<CustomTargetSpec>]?
+}
+
 public struct ConfigStore: Sendable {
     public let url: URL
     public let home: URL
@@ -35,6 +43,10 @@ public struct ConfigStore: Sendable {
         }
         var valid: [CustomTargetSpec] = []
         var issues: [ConfigIssue] = []
+        let raw = (try? JSONDecoder().decode(RawTargets.self, from: Data(contentsOf: url)))?.customTargets ?? []
+        for (index, entry) in raw.enumerated() where entry.value == nil {
+            issues.append(ConfigIssue(message: "Custom target #\(index + 1) skipped: \(entry.error ?? "invalid entry")"))
+        }
         for target in config.customTargets {
             if let problem = problem(with: target) {
                 issues.append(ConfigIssue(message: "Custom target \"\(target.id)\" skipped: \(problem)"))
@@ -55,8 +67,13 @@ public struct ConfigStore: Sendable {
     /// Stores the real path, so a root that is a symlink (for example to another volume) is
     /// judged by where it points.
     public func addProjectRoot(_ root: URL) throws {
-        var config = load().config
-        let real = root.standardizedFileURL.resolvingSymlinksInPath().path
+        let realURL = root.standardizedFileURL.resolvingSymlinksInPath()
+        if PathGuard.isForbidden(realURL, home: home) { throw ConfigError.protectedRoot(realURL.path) }
+        // Decode directly (throws on a malformed file) so a broken file is never replaced by defaults.
+        var config = FileManager.default.fileExists(atPath: url.path)
+            ? try JSONDecoder().decode(PhewConfig.self, from: Data(contentsOf: url))
+            : PhewConfig()
+        let real = realURL.path
         guard !config.projectRoots.contains(real) else { return }
         config.projectRoots.append(real)
         try save(config)
@@ -67,7 +84,10 @@ public struct ConfigStore: Sendable {
         if target.paths.isEmpty { return "no paths" }
         for path in target.paths {
             guard path.hasPrefix("/") || path == "~" || path.hasPrefix("~/") else { return "path \"\(path)\" must start with / or ~/" }
-            if PathGuard.isForbidden(expandTilde(path, home: home), home: home) { return "path \"\(path)\" is protected" }
+            let url = expandTilde(path, home: home)
+            if PathGuard.isForbidden(url, home: home) || PathGuard.isForbidden(url.resolvingSymlinksInPath(), home: home) {
+                return "path \"\(path)\" is protected"
+            }
         }
         return nil
     }

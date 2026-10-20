@@ -12,7 +12,10 @@ private func setup(_ body: (URL, URL, PathGuard) throws -> Void) throws {
 }
 
 @Test func allowsPathInsideRoot() throws {
-    try setup { _, root, guard_ in try guard_.check(root.appending(path: "a/b")) }
+    try setup { _, root, guard_ in
+        try FileManager.default.createDirectory(at: root.appending(path: "a"), withIntermediateDirectories: true)
+        try guard_.check(root.appending(path: "a/b"))
+    }
 }
 
 @Test func allowsRootItself() throws {
@@ -63,6 +66,7 @@ private func setup(_ body: (URL, URL, PathGuard) throws -> Void) throws {
 @Test func siblingWithSharedPrefixIsOutside() throws {
     try setup { home, _, guard_ in
         let url = home.appending(path: "Library/CachesOther/x")
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         #expect(throws: PathGuardError.outsideRoots(url.path)) { try guard_.check(url) }
     }
 }

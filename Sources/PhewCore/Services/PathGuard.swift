@@ -4,6 +4,7 @@ public enum PathGuardError: Error, Equatable {
     case forbidden(String)
     case outsideRoots(String)
     case escapesRoot(String)
+    case missingParent(String)
 }
 
 /// Last check before anything is deleted. A path must sit inside an allowed root,
@@ -13,12 +14,21 @@ public struct PathGuard: Sendable {
     private let home: URL
 
     public init(allowedRoots: [URL], home: URL = FileManager.default.homeDirectoryForCurrentUser) {
-        self.roots = allowedRoots.map { $0.standardizedFileURL.resolvingSymlinksInPath().pathComponents }
+        // A root that resolves to a protected folder (a symlink to home or "/") would
+        // allowlist everything below it, so it is dropped.
+        self.roots = allowedRoots
+            .map { $0.standardizedFileURL.resolvingSymlinksInPath() }
+            .filter { !Self.isForbidden($0, home: home) }
+            .map(\.pathComponents)
         self.home = home
     }
 
     public func check(_ url: URL) throws(PathGuardError) {
         let path = url.standardizedFileURL
+        // resolvingSymlinksInPath leaves a missing path unresolved, so a missing parent fails closed.
+        guard FileManager.default.fileExists(atPath: path.deletingLastPathComponent().path) else {
+            throw .missingParent(path.path)
+        }
         // The last component is not resolved: deleting a symlink removes the link, not its target.
         let real = path.deletingLastPathComponent().resolvingSymlinksInPath()
             .appending(path: path.lastPathComponent)
@@ -35,11 +45,13 @@ public struct PathGuard: Sendable {
     }
 
     public static func isForbidden(_ url: URL, home: URL) -> Bool {
-        let c = url.standardizedFileURL.pathComponents
-        if home.standardizedFileURL.pathComponents.starts(with: c) { return true } // "/", home, or an ancestor
-        if c.starts(with: ["/", "System"]) { return true }
-        if c.starts(with: ["/", "Library"]) {
-            return !c.starts(with: ["/", "Library", "Developer", "CoreSimulator", "Caches"])
+        // Lowercased because APFS is usually case-insensitive: "/USERS" is "/Users".
+        let c = url.standardizedFileURL.pathComponents.map { $0.lowercased() }
+        let h = home.standardizedFileURL.pathComponents.map { $0.lowercased() }
+        if h.starts(with: c) { return true } // "/", home, or an ancestor
+        if c.starts(with: ["/", "system"]) { return true }
+        if c.starts(with: ["/", "library"]) {
+            return !c.starts(with: ["/", "library", "developer", "coresimulator", "caches"])
         }
         return false
     }

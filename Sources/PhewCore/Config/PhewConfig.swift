@@ -41,7 +41,24 @@ public struct PhewConfig: Codable, Sendable, Equatable {
         projectRoots = try c.decodeIfPresent([String].self, forKey: .projectRoots) ?? d.projectRoots
         dormantDays = try c.decodeIfPresent(Int.self, forKey: .dormantDays) ?? d.dormantDays
         lowSpaceAlert = try c.decodeIfPresent(LowSpaceAlert.self, forKey: .lowSpaceAlert) ?? d.lowSpaceAlert
-        customTargets = try c.decodeIfPresent([CustomTargetSpec].self, forKey: .customTargets) ?? d.customTargets
+        // One bad entry must not drop the whole config; ConfigStore reports the skipped ones.
+        customTargets = (try c.decodeIfPresent([Lossy<CustomTargetSpec>].self, forKey: .customTargets))?
+            .compactMap(\.value) ?? d.customTargets
+    }
+}
+
+struct Lossy<T: Decodable>: Decodable {
+    let value: T?
+    let error: String?
+
+    init(from decoder: any Decoder) throws {
+        do {
+            value = try T(from: decoder)
+            error = nil
+        } catch {
+            value = nil
+            self.error = String(describing: error)
+        }
     }
 }
 
