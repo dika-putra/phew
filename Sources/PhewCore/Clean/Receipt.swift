@@ -1,0 +1,23 @@
+public struct ReceiptEntry: Sendable, Equatable {
+    public let itemID: String
+    public let title: String
+    public let claimed: Int64
+    public let measured: Int64
+    public let failures: [String]
+    public let skippedReason: String?
+}
+
+public struct Receipt: Sendable {
+    public let entries: [ReceiptEntry]
+    public let freeBefore: Int64
+    public let freeAfter: Int64
+
+    public var measuredTotal: Int64 { entries.reduce(0) { $0 + $1.measured } }
+
+    /// Entries where what was freed differs from what the scan expected by more than 1 MiB and 5%.
+    public var mismatches: [ReceiptEntry] {
+        entries.filter { e in
+            e.skippedReason == nil && abs(e.claimed - e.measured) > max(1_048_576, e.claimed / 20)
+        }
+    }
+}
