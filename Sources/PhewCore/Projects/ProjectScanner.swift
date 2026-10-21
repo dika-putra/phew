@@ -15,11 +15,13 @@ public struct ProjectScanner: Sendable {
     let roots: [URL]
     let dormantDays: Int
     let now: Date
+    let devProcesses: DevProcessCheck
 
-    public init(roots: [URL], dormantDays: Int, now: Date = .now) {
+    public init(roots: [URL], dormantDays: Int, now: Date = .now, devProcesses: DevProcessCheck = .live) {
         self.roots = roots
         self.dormantDays = dormantDays
         self.now = now
+        self.devProcesses = devProcesses
     }
 
     public func scan() async -> ProjectScan {
@@ -51,6 +53,7 @@ public struct ProjectScanner: Sendable {
         }
         let verdicts = await GitSafety.check(candidates.flatMap(\.2))
 
+        let processes = devProcesses.snapshot()
         var items: [Item] = []
         var skipped = skippedRepos
         for (project, artifact, urls) in candidates {
@@ -62,7 +65,7 @@ public struct ProjectScanner: Sendable {
                 skipped.append(SkippedArtifact(url: artifact.url, reason: reason))
                 continue
             }
-            items.append(item(project, artifact, allowed))
+            items.append(item(project, artifact, allowed, running: processes.runningIn(project.root)))
         }
         return ProjectScan(items: items, skipped: skipped, unreadable: walk.unreadable)
     }
@@ -79,7 +82,7 @@ public struct ProjectScanner: Sendable {
         return nil
     }
 
-    private func item(_ project: FoundProject, _ artifact: FoundArtifact, _ urls: [URL]) -> Item {
+    private func item(_ project: FoundProject, _ artifact: FoundArtifact, _ urls: [URL], running: String?) -> Item {
         let root = project.root.standardizedFileURL
         let name = root.lastPathComponent
         let relative = String(artifact.url.path.dropFirst(root.path.count + 1))
@@ -90,10 +93,10 @@ public struct ProjectScanner: Sendable {
         // No file date means we can't tell; treat as active so nothing is preselected by accident.
         let dormant = project.lastModified.map { now.timeIntervalSince($0) > Double(dormantDays) * 86_400 } ?? false
         var item = Item(id: target.id, target: target, urls: urls, bytes: DiskSize.allocated(urls).bytes,
-                        lastUsed: project.lastModified, state: .ready)
+                        lastUsed: project.lastModified, state: running.map { .inUse(app: $0) } ?? .ready)
         item.project = ProjectInfo(root: root, name: name, stacks: project.stacks,
                                    lastModified: project.lastModified, dormant: dormant)
-        item.preselected = Item.defaultSelection(target) && dormant
+        item.preselected = Item.defaultSelection(target) && dormant && running == nil
         return item
     }
 }

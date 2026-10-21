@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m4-menubar.md
 Branch: m4-menubar
-Next step: Task 4, Step 1 (M4)
+Next step: Task 5, Step 1 (M4)
 
 ## Carry into M4 (deferred from the M2 and M3 reviews)
 
@@ -53,3 +53,4 @@ Next step: Task 4, Step 1 (M4)
 | 2026-10-21 | M4 | Task 1: scan cache | Add scan cache |  |
 | 2026-10-21 | M4 | Task 2: summary | Add scan summary |  |
 | 2026-10-21 | M4 | Task 3: low space alert state | Add low space alert state |  |
+| 2026-10-21 | M4 | Task 4: dev process check | Mark projects with a running dev process as in use |  |

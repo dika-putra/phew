@@ -37,6 +37,10 @@ public enum Planner {
         if let app = running.firstRunning(item.target.skipIfRunning) {
             return inUseMessage(app: app, title: item.target.title)
         }
+        // Project items carry the dev process found at scan time in their state.
+        if item.target.skipIfRunning.isEmpty, case .inUse(let app) = item.state {
+            return inUseMessage(app: app, title: item.target.title)
+        }
         if item.state == .unreadable {
             return "Can't read \(item.target.title). Grant Full Disk Access or check permissions."
         }
