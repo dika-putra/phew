@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m3-projects.md
 Branch: m3-projects
-Next step: Task 7, Step 1 (M3)
+Next step: Final review of m3-projects, then M4 plan
 
 ## Carry into M3 (deferred from the M2 review)
 
@@ -44,3 +44,4 @@ Next step: Task 7, Step 1 (M3)
 | 2026-10-21 | M3 | Task 4: GitSafety | Add GitSafety |  |
 | 2026-10-21 | M3 | Task 5: ProjectScanner | Add ProjectScanner |  |
 | 2026-10-21 | M3 | Task 6: CLI | Add project scan to the CLI | phew config --add-root/--remove-root; projects ids in clean |
+| 2026-10-21 | M3 | Task 7: milestone check | Finish M3 | real scan: 5 projects, 9.87 GB in 20 s; roots kept |
