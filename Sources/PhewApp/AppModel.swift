@@ -30,6 +30,9 @@ final class AppModel {
     private let availableSpace: @Sendable () -> Int64
     private let running: RunningCheck
     private let execute: @Sendable (CleanPlan, @escaping @Sendable (String) -> Void) async -> Receipt
+    private let notify: @Sendable (String) -> Void
+    private let alertSettings: @Sendable () -> LowSpaceAlert
+    private let defaults: UserDefaults
 
     init(scan: @escaping @Sendable () async -> ScanSnapshot = AppModel.liveScan,
          cache: ScanCache = ScanCache(),
@@ -37,7 +40,13 @@ final class AppModel {
          running: RunningCheck = .live,
          execute: @escaping @Sendable (CleanPlan, @escaping @Sendable (String) -> Void) async -> Receipt = {
              await Executor().execute($0, progress: $1)
-         }) {
+         },
+         notify: @escaping @Sendable (String) -> Void = { Notifier.post($0) },
+         alertSettings: @escaping @Sendable () -> LowSpaceAlert = { ConfigStore().load().config.lowSpaceAlert },
+         defaults: UserDefaults = .standard) {
+        self.notify = notify
+        self.alertSettings = alertSettings
+        self.defaults = defaults
         self.scan = scan
         self.cache = cache
         self.availableSpace = available
@@ -68,6 +77,19 @@ final class AppModel {
         available = availableSpace()
         try? cache.save(result)
         isScanning = false
+        checkSpace()
+    }
+
+    /// Called every 15 minutes and after each scan. Notifies once per drop below the threshold.
+    func checkSpace() {
+        available = availableSpace()
+        let key = "lowSpaceAlertState"
+        var state = defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(LowSpaceAlertState.self, from: $0) }
+            ?? LowSpaceAlertState()
+        if state.shouldNotify(available: available, settings: alertSettings()) {
+            notify("Only \(bytes(available)) left. Phew can free about \(bytes(summary.reclaimable)).")
+        }
+        defaults.set(try? JSONEncoder().encode(state), forKey: key)
     }
 
     var isCleaning: Bool { cleaning != nil }

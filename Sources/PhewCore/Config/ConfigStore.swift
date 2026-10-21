@@ -79,6 +79,15 @@ public struct ConfigStore: Sendable {
         try save(config)
     }
 
+    /// Changes settings and saves. A file that does not parse is left alone (throws).
+    public func update(_ change: (inout PhewConfig) -> Void) throws {
+        var config = FileManager.default.fileExists(atPath: url.path)
+            ? try JSONDecoder().decode(PhewConfig.self, from: Data(contentsOf: url))
+            : PhewConfig()
+        change(&config)
+        try save(config)
+    }
+
     public func removeProjectRoot(_ root: URL) throws {
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         var config = try JSONDecoder().decode(PhewConfig.self, from: Data(contentsOf: url))

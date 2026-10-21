@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m4-menubar.md
 Branch: m4-menubar
-Next step: Task 7, Step 1 (M4)
+Next step: Task 8: user check list (M4)
 
 ## Carry into M4 (deferred from the M2 and M3 reviews)
 
@@ -56,3 +56,4 @@ Next step: Task 7, Step 1 (M4)
 | 2026-10-21 | M4 | Task 4: dev process check | Mark projects with a running dev process as in use |  |
 | 2026-10-21 | M4 | Task 5: app target, Home | Add menu bar app with Home | make app; PHEW_SNAPSHOT renders screens; popover click needs user check |
 | 2026-10-21 | M4 | Task 6: group view, clean flow | Add group view and clean flow | dev server check narrowed (MCP servers gave false in-use); popover clean needs user check |
+| 2026-10-21 | M4 | Task 7: settings, About, alert | Add settings, About and low space alert | interactive checks moved to Task 8 with the user |

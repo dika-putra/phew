@@ -1,5 +1,6 @@
 import PhewCore
 import SwiftUI
+import UserNotifications
 
 @main
 struct PhewApp: App {
@@ -16,10 +17,11 @@ struct PhewApp: App {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     let model = AppModel()
     private let scheduler = BackgroundScan()
     private var previewWindow: NSWindow?
+    private var spaceTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let dir = ProcessInfo.processInfo.environment["PHEW_SNAPSHOT"] {
@@ -28,21 +30,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         scheduler.start { [model] in await model.refresh() }
         if model.isStale { Task { await model.refresh() } }
+        UNUserNotificationCenter.current().delegate = self
+        Notifier.requestPermission()
+        model.checkSpace()
+        spaceTimer = Timer.scheduledTimer(withTimeInterval: 15 * 60, repeats: true) { [model] _ in
+            Task { @MainActor in model.checkSpace() }
+        }
         // PHEW_PREVIEW=1 shows the popover content in a normal window (screenshots, manual checks).
-        if ProcessInfo.processInfo.environment["PHEW_PREVIEW"] != nil {
+        if ProcessInfo.processInfo.environment["PHEW_PREVIEW"] != nil { showWindow() }
+    }
+
+    /// A menu bar popover can't be opened from code, so a click on the notification opens
+    /// the same content in a small window.
+    func showWindow() {
+        if previewWindow == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: ContentView(model: model).frame(width: 360)))
-            window.title = "Phew preview"
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            window.title = "Phew"
+            window.isReleasedWhenClosed = false
             previewWindow = window
         }
+        model.screen = .home
+        previewWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
+        Task { @MainActor in self.showWindow() }
+        completionHandler()
     }
 }
 
 struct ContentView: View {
     @Bindable var model: AppModel
+    @AppStorage("appearance") private var appearance = Appearance.system.rawValue
 
     var body: some View {
+        screen.preferredColorScheme(Appearance(rawValue: appearance)?.scheme)
+    }
+
+    @ViewBuilder private var screen: some View {
         switch model.screen {
         case .home: HomeView(model: model)
         case .group(let name): GroupView(model: model, group: name)
@@ -50,11 +77,7 @@ struct ContentView: View {
             ConfirmView(model: model, plan: plan, back: plan.items.first.map { .group($0.target.group) } ?? .home)
         case .cleaning(let title): CleaningView(title: title)
         case .receipt(let receipt): ReceiptView(model: model, receipt: receipt)
-        default:
-            VStack {
-                Header(title: "Coming soon", back: { model.screen = .home })
-                Spacer(minLength: 120)
-            }
+        case .settings: SettingsView(model: model)
         }
     }
 }

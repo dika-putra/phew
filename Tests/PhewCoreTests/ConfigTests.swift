@@ -105,3 +105,15 @@ private let fakeHome = URL(fileURLWithPath: "/Users/phew-test")
         #expect(store.load().config.projectRoots == [b.path])
     }
 }
+
+@Test func updateChangesOneSettingAndKeepsMalformedFile() throws {
+    try withTempDir { dir in
+        let file = dir.appending(path: "config.json")
+        let store = ConfigStore(url: file, home: fakeHome)
+        try store.update { $0.dormantDays = 30 }
+        #expect(store.load().config.dormantDays == 30)
+        try "{ bad".write(to: file, atomically: true, encoding: .utf8)
+        #expect(throws: (any Error).self) { try store.update { $0.dormantDays = 1 } }
+        #expect(try String(contentsOf: file, encoding: .utf8) == "{ bad")
+    }
+}
