@@ -27,6 +27,7 @@ struct ItemRow: View {
             if item.state == .unreadable {
                 Button("Enable") { FullDiskAccess.openSettings() }.controlSize(.small)
             }
+            RevealButton(urls: Reveal.urls(for: item))
         }
         .padding(.leading, 12 + indent).padding(.trailing, 12).padding(.vertical, 7)
     }
@@ -76,6 +77,7 @@ struct ProjectsList: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
+                RevealButton(urls: [project.id])
             }
             .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
             ForEach(project.items) { item in

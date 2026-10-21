@@ -152,3 +152,14 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     m.toggleProject(URL(fileURLWithPath: "/w"))
     #expect(m.selection.isEmpty)
 }
+
+@Test func revealUsesTargetFolderForContentsAndUrlsOtherwise() {
+    let home = URL(fileURLWithPath: "/Users/t")
+    let folder = PathTarget(id: "f", group: "G", title: "F", tier: .regenerates, paths: ["~/A", "~/B"])
+    let plain = Item(id: "f", target: folder, urls: [URL(fileURLWithPath: "/Users/t/A")], bytes: 1, lastUsed: nil, state: .ready)
+    #expect(Reveal.urls(for: plain, home: home).map(\.path) == ["/Users/t/A"])
+    let contents = PathTarget(id: "c", group: "G", title: "C", tier: .regenerates, paths: ["~/Library/Caches"], contents: true)
+    let many = Item(id: "c", target: contents, urls: (0..<50).map { URL(fileURLWithPath: "/Users/t/Library/Caches/\($0)") },
+                    bytes: 1, lastUsed: nil, state: .ready)
+    #expect(Reveal.urls(for: many, home: home).map(\.path) == ["/Users/t/Library/Caches"])
+}

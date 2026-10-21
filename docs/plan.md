@@ -15,7 +15,7 @@ Success: a developer opens the menu bar, sees free space and what can be reclaim
 Made by the user:
 - Name: Phew (display name). Repo `dika-putra/phew` on GitHub, private for now, open source (MIT) later. CLI binary `phew`.
 - The menu bar popover is the main UI. Cleaning happens inside the popover, always after a confirmation.
-- Every item has its own Clean button. Bulk clean with checkboxes also exists.
+- Items are picked with checkboxes (per item, and per project in the Projects group) and cleaned with one "Clean selected" button. No per-item Clean buttons (changed during M4: too many buttons). Each row and project has a small folder icon that shows it in Finder.
 - Background size scan every 2 hours, plus a Refresh button for a manual scan.
 - Full Disk Access (FDA) is supported but optional. Items that need FDA carry an FDA badge. When FDA is not granted, the item shows a button that opens the FDA pane in System Settings.
 - Users can add their own paths (custom targets). The built-in catalog covers commonly used stacks only.
@@ -253,7 +253,7 @@ Popover, top to bottom:
 1. Header: volume name, available space and a bar (`volumeAvailableCapacityForImportantUsage`, the number Finder shows, labeled "Available"). Refresh button. "Scanned 12 min ago" or a progress line while scanning.
 2. Summary: total reclaimable, split by tier (Regenerates, Redownload, Data loss).
 3. Group list (Xcode, Android, Flutter, Node, Python, PHP, Ruby, Java, Go, Rust, Docker, Editors, Versions, Projects, Custom), each with size. Click opens the group.
-4. Group view: one row per item with checkbox, title, size, last used, tier badge, FDA badge, and a Clean button. Version manager rows show "used by N projects" and a lock icon. Project rows expand to their artifacts.
+4. Group view: one row per item with checkbox, title, size, last used, tier badge, state badge, and a folder icon (Show in Finder). Version manager rows show "used by N projects" and a lock icon. Project rows expand to their artifacts.
 5. Footer when something is checked: "Clean selected: N items, X GB".
 6. Gear: settings (appearance, project roots, dormant days, launch at login, low space alert on/off and threshold, custom targets, FDA status, install CLI).
 
