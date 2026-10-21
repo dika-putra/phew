@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m4-menubar.md
 Branch: m4-menubar
-Next step: Task 2, Step 1 (M4)
+Next step: Task 3, Step 1 (M4)
 
 ## Carry into M4 (deferred from the M2 and M3 reviews)
 
@@ -51,3 +51,4 @@ Next step: Task 2, Step 1 (M4)
 | 2026-10-21 | M3 | Final review fixes | Fix M3 review findings | 1 Critical + 3 Important fixed; minors in Carry into M4 |
 | 2026-10-21 | M4 | Task 0: plan | Add M4 plan | m3-projects merged to main |
 | 2026-10-21 | M4 | Task 1: scan cache | Add scan cache |  |
+| 2026-10-21 | M4 | Task 2: summary | Add scan summary |  |
