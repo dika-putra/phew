@@ -7,7 +7,7 @@ public struct ReceiptEntry: Sendable, Equatable {
     public let skippedReason: String?
 }
 
-public struct Receipt: Sendable {
+public struct Receipt: Sendable, Equatable {
     public let entries: [ReceiptEntry]
     public let freeBefore: Int64
     public let freeAfter: Int64

@@ -5,3 +5,4 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 .superpowers/
+build/

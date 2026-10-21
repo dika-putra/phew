@@ -3,7 +3,7 @@ public struct SkippedItem: Sendable, Equatable {
     public let reason: String
 }
 
-public struct CleanPlan: Sendable {
+public struct CleanPlan: Sendable, Equatable {
     public let items: [Item]
     public let skipped: [SkippedItem]
     public let expectedBytes: Int64
