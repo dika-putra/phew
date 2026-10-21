@@ -25,14 +25,16 @@ struct ScanCommand: AsyncParsableCommand {
     func run() async throws {
         let all = loadTargets()
         let targets = all.filter { group == nil || $0.group.caseInsensitiveCompare(group!) == .orderedSame }
-        if targets.isEmpty, let group {
+        let wantsProjects = group == nil || group!.caseInsensitiveCompare("Projects") == .orderedSame
+        if targets.isEmpty, !wantsProjects, let group {
             throw ValidationError("No group named \"\(group)\". Run `phew list` to see all groups.")
         }
         status("Scanning \(targets.count) targets…")
         let items = await TargetScanner().scan(targets, alsoOwnedBy: all)
+        let projects = wantsProjects ? await scanProjects() : nil
         let available = DiskSize.available()
         if json {
-            FileHandle.standardOutput.write(try scanJSON(items, available: available))
+            FileHandle.standardOutput.write(try scanJSON(items + (projects?.items ?? []), available: available))
             print()
             return
         }
@@ -46,12 +48,18 @@ struct ScanCommand: AsyncParsableCommand {
             print("  \(pad(item.id, idWidth))  \(pad(formatBytes(item.bytes), 9))  "
                 + "\(pad(item.target.tier.rawValue, 11))  \(pad(stateText(item.state), 26))  \(item.target.title)")
         }
+        if wantsProjects {
+            if let projects { printProjects(projects) } else {
+                print("\nNo project folders. Add one: phew config --add-root ~/Documents/Projects")
+            }
+        }
+        let everything = items + (projects?.items ?? [])
         print()
         for tier in Tier.allCases {
-            let total = items.filter { $0.target.tier == tier }.reduce(Int64(0)) { $0 + $1.bytes }
+            let total = everything.filter { $0.target.tier == tier }.reduce(Int64(0)) { $0 + $1.bytes }
             print("\(pad(tier.rawValue, 12)) \(formatBytes(total))")
         }
-        print("\(pad("Total", 12)) \(formatBytes(items.reduce(0) { $0 + $1.bytes }))")
+        print("\(pad("Total", 12)) \(formatBytes(everything.reduce(0) { $0 + $1.bytes }))")
         print("\(pad("Available", 12)) \(formatBytes(available))")
     }
 }

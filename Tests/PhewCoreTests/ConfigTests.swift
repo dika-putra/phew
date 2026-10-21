@@ -93,3 +93,15 @@ private let fakeHome = URL(fileURLWithPath: "/Users/phew-test")
     #expect(expandTilde("~/a/b", home: fakeHome).path == "/Users/phew-test/a/b")
     #expect(expandTilde("/opt/x", home: fakeHome).path == "/opt/x")
 }
+
+@Test func removeProjectRoot() throws {
+    try withTempDir { dir in
+        let a = dir.appending(path: "a"), b = dir.appending(path: "b")
+        for d in [a, b] { try FileManager.default.createDirectory(at: d, withIntermediateDirectories: true) }
+        let store = ConfigStore(url: dir.appending(path: "config.json"), home: fakeHome)
+        try store.addProjectRoot(a)
+        try store.addProjectRoot(b)
+        try store.removeProjectRoot(a)
+        #expect(store.load().config.projectRoots == [b.path])
+    }
+}

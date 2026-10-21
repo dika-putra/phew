@@ -14,6 +14,8 @@ struct CleanCommand: AsyncParsableCommand {
           phew clean xcode.deriveddata --dry-run
           phew clean gradle dart.analysis
           phew clean yarn --yes
+          phew clean projects:~/Documents/Projects/old-app --dry-run
+          phew clean projects --dry-run    (every dormant project item)
         """
     )
 
@@ -29,7 +31,8 @@ struct CleanCommand: AsyncParsableCommand {
     func run() async throws {
         let all = loadTargets()
         let known = all.map(\.id)
-        for id in ids where !known.contains(id) {
+        let projectIDs = ids.filter { $0 == "projects" || $0.hasPrefix("projects:") }
+        for id in ids where !known.contains(id) && !projectIDs.contains(id) {
             let hints = suggestions(for: id, in: known)
             throw ValidationError(hints.isEmpty
                 ? "Unknown id \"\(id)\". Run `phew list` to see ids."
@@ -41,8 +44,24 @@ struct CleanCommand: AsyncParsableCommand {
 
         let selected = all.filter { ids.contains($0.id) }
         status("Scanning…")
-        let items = await TargetScanner().scan(selected, alsoOwnedBy: all)
-        for id in ids where !items.contains(where: { $0.id == id }) {
+        var items = await TargetScanner().scan(selected, alsoOwnedBy: all)
+        if !projectIDs.isEmpty {
+            guard let projects = await scanProjects() else {
+                throw ValidationError("No project folders. Add one: phew config --add-root ~/Documents/Projects")
+            }
+            // The shell does not expand ~ after "projects:", and stored roots are real paths (/tmp is /private/tmp).
+            let normalized = projectIDs.map { id -> String in
+                guard id.hasPrefix("projects:") else { return id }
+                let url = expandTilde(String(id.dropFirst(9)), home: FileManager.default.homeDirectoryForCurrentUser)
+                return "projects:" + url.standardizedFileURL.resolvingSymlinksInPath().path
+            }
+            let match = matchProjectItems(normalized, in: projects.items)
+            if let first = match.unknown.first {
+                throw ValidationError("Nothing to clean for \(first). Run `phew scan --group Projects` to see project ids.")
+            }
+            items += match.matched
+        }
+        for id in ids where !projectIDs.contains(id) && !items.contains(where: { $0.id == id }) {
             print("Nothing to clean for \(id).")
         }
         let plan = Planner.plan(items, running: .live)

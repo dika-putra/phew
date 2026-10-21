@@ -79,6 +79,14 @@ public struct ConfigStore: Sendable {
         try save(config)
     }
 
+    public func removeProjectRoot(_ root: URL) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        var config = try JSONDecoder().decode(PhewConfig.self, from: Data(contentsOf: url))
+        let real = root.standardizedFileURL.resolvingSymlinksInPath().path
+        config.projectRoots.removeAll { $0 == real || $0 == root.standardizedFileURL.path }
+        try save(config)
+    }
+
     private func problem(with target: CustomTargetSpec) -> String? {
         if !target.id.hasPrefix("custom.") { return "id must start with \"custom.\"" }
         if target.paths.isEmpty { return "no paths" }

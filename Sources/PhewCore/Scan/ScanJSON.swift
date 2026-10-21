@@ -9,7 +9,7 @@ public func scanJSON(_ items: [Item], available: Int64) throws -> Data {
         case .inUse: "inUse"
         case .unreadable: "unreadable"
         }
-        return [
+        var entry: [String: Any] = [
             "id": item.id,
             "group": item.target.group,
             "title": item.target.title,
@@ -21,6 +21,10 @@ public func scanJSON(_ items: [Item], available: Int64) throws -> Data {
             "preselected": item.preselected,
             "paths": item.target.paths,
         ]
+        if let p = item.project {
+            entry["project"] = ["root": p.root.path, "name": p.name, "stacks": p.stacks, "dormant": p.dormant] as [String: Any]
+        }
+        return entry
     }
     let root: [String: Any] = ["version": 1, "available": available, "items": list]
     return try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
