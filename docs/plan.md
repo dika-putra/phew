@@ -91,7 +91,7 @@ Target kinds. Most targets are data. Only a few need code.
 3. `VersionManager` (code, one protocol, one type per tool): list installed versions with size, find pinned versions in projects, lock active and default, remove one version with the tool's own command. Section 9.
 4. Custom targets with real logic (code): simulator runtimes, unavailable simulators, simulator dyld cache, Docker, npm/pnpm/go/cargo where a command is preferred over a folder delete.
 
-Core flow, the same for the CLI, the popover, per-item Clean and bulk Clean:
+Core flow, the same for the CLI and the popover:
 
 `scan` -> `[Item]` -> `plan(selection)` -> `CleanPlan` (items, paths or commands, expected bytes) -> user confirms -> `execute` -> `Receipt`.
 
@@ -334,7 +334,7 @@ Use temp folders. Never touch real data.
 | 1 | Package skeleton, Shell, DiskSize, PathGuard, Config, catalog loader | tests pass |
 | 2 | Path targets (section 8), Receipt, plan and execute | sizes match `everclean.sh` for shared targets, except where section 7 says the script is wrong (runtimes use `sizeBytes`, mounted volumes are not counted); tests pass |
 | 3 | Project scanner with all rules, git-ignore check, dormant | `phew scan` lists projects under a fixture tree correctly |
-| 4 | Menu bar app MVP: light and dark mode, About, header, summary, groups, item rows, per-item and bulk clean with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan, low space notification | can clean a fixture target from the popover and the receipt matches the measured change |
+| 4 | Menu bar app MVP: light and dark mode, About, header, summary, groups, item rows with checkboxes, Clean selected with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan, low space notification | can clean a fixture target from the popover and the receipt matches the measured change |
 | 5 | Custom targets: simulators, runtimes, dyld, Docker, npm, pnpm, go, cargo; version managers | same behavior as `everclean.sh` for the ones it has |
 | 6 | CLI polish (`--json`, `versions`, `list`, help text and examples for every command, install from the app and `make install`), README with screenshots and a CLI section, `NOTICE`, release zip with SHA-256 | clean install from the zip works on a second Mac or user account |
 
