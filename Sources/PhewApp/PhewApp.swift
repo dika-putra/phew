@@ -2,13 +2,17 @@ import PhewCore
 import SwiftUI
 import UserNotifications
 
+/// One height for every screen: a MenuBarExtra window that grows when the screen changes
+/// keeps its bottom edge, so the top slid under the menu bar.
+let popoverHeight: CGFloat = 560
+
 @main
 struct PhewApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     var body: some Scene {
         MenuBarExtra {
-            ContentView(model: delegate.model).frame(width: 360)
+            ContentView(model: delegate.model).frame(width: 360, height: popoverHeight, alignment: .top)
         } label: {
             Image(systemName: "wind")
         }

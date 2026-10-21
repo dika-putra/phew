@@ -36,7 +36,7 @@ struct HomeView: View {
             if let snapshot = model.snapshot {
                 summary(model.summary)
                 Divider()
-                Scroll {
+                Scroll(maxHeight: 330) {
                     VStack(spacing: 0) {
                         ForEach(model.summary.groups) { group in
                             Button { model.screen = .group(group.id) } label: { groupRow(group) }
