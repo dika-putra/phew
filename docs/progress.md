@@ -2,9 +2,9 @@
 
 Resume here: read this file, then the plan named in "Current plan", then continue at "Next step".
 
-Current plan: docs/superpowers/plans/2026-10-21-m2-clean.md
-Branch: m2-clean
-Next step: Merge m2-clean if the user agrees, then write the M3 plan (project scanner)
+Current plan: docs/superpowers/plans/2026-10-21-m3-projects.md
+Branch: m3-projects
+Next step: Task 1, Step 1 (M3)
 
 ## Carry into M3 (deferred from the M2 review)
 
@@ -37,3 +37,4 @@ Next step: Merge m2-clean if the user agrees, then write the M3 plan (project sc
 | 2026-10-21 | M2 | Task 7: phew clean | Add phew clean | verified on ~/.phew-m2-test; config restored |
 | 2026-10-21 | M2 | Task 8: milestone check | Finish M2 | size parity with du: all 18 items ok; 74 tests |
 | 2026-10-21 | M2 | Final review fixes | Fix M2 review findings | 4 Important fixed; 5 minors deferred (see Carry into M3) |
+| 2026-10-21 | M3 | Task 0: plan | Add M3 plan | m2-clean merged to main |
