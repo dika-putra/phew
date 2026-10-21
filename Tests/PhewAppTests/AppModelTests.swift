@@ -81,7 +81,8 @@ private func receipt(for plan: CleanPlan) -> Receipt {
 
 @MainActor @Test func confirmRunsExecutorAndShowsReceipt() async throws {
     let m = try model(items: [appItem("a")]) { plan, _ in receipt(for: plan) }
-    m.cleanItem("a")
+    m.selection = ["a"]
+    m.cleanSelected(in: "G")
     guard case .confirm = m.screen else { Issue.record("expected confirm, got \(m.screen)"); return }
     m.confirm()
     await m.waitForClean()
@@ -89,16 +90,17 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     #expect(r.measuredTotal == 10)
 }
 
-@MainActor @Test func inUseItemDoesNotOpenConfirm() throws {
+@MainActor @Test func inUseSelectedItemShowsReasonInConfirm() throws {
     let t = PathTarget(id: "dd", group: "Xcode", title: "DerivedData", tier: .regenerates, paths: ["~/dd"],
                        skipIfRunning: ["com.apple.dt.Xcode"])
     let it = Item(id: "dd", target: t, urls: [], bytes: 1, lastUsed: nil, state: .ready)
     let xcode = RunningCheck(runningBundleIDs: { ["com.apple.dt.Xcode": "Xcode"] }, processMatches: { _ in false })
     let m = try model(items: [it], running: xcode) { plan, _ in receipt(for: plan) }
-    m.screen = .group("Xcode")
-    m.cleanItem("dd")
-    #expect(m.screen == .group("Xcode"))
-    #expect(m.inlineMessage == "Xcode is running. Quit Xcode to clean DerivedData.")
+    m.selection = ["dd"]
+    m.cleanSelected(in: "Xcode")
+    guard case .confirm(let plan) = m.screen else { Issue.record("expected confirm"); return }
+    #expect(plan.items.isEmpty)
+    #expect(plan.skipped.first?.reason == "Xcode is running. Quit Xcode to clean DerivedData.")
 }
 
 @MainActor @Test func cleanSurvivesScreenChange() async throws {
@@ -106,7 +108,8 @@ private func receipt(for plan: CleanPlan) -> Receipt {
         try? await Task.sleep(for: .milliseconds(100))
         return receipt(for: plan)
     }
-    m.cleanItem("a")
+    m.selection = ["a"]
+    m.cleanSelected(in: "G")
     m.confirm()
     m.screen = .home
     await m.waitForClean()
@@ -116,7 +119,8 @@ private func receipt(for plan: CleanPlan) -> Receipt {
 
 @MainActor @Test func cleanedItemsLeaveSnapshot() async throws {
     let m = try model(items: [appItem("a"), appItem("b")]) { plan, _ in receipt(for: plan) }
-    m.cleanItem("a")
+    m.selection = ["a"]
+    m.cleanSelected(in: "G")
     m.confirm()
     await m.waitForClean()
     #expect(m.snapshot?.items.map(\.id) == ["b"])
@@ -139,19 +143,12 @@ private func receipt(for plan: CleanPlan) -> Receipt {
 
 @MainActor @Test func toggleProjectSelectsAllReadyItems() throws {
     let items = [projectItem("a", root: "/w"), projectItem("b", root: "/w"), projectItem("c", root: "/w", state: .inUse(app: "vite")),
-                 projectItem("d", root: "/other")]
+                 projectItem("e", root: "/w", state: .unreadable), projectItem("d", root: "/other")]
     let m = try model(items: items) { plan, _ in receipt(for: plan) }
     m.selection = []
     m.toggleProject(URL(fileURLWithPath: "/w"))
-    #expect(m.selection == ["a", "b"])
+    // In-use items can be picked; the confirm view then says why they are skipped.
+    #expect(m.selection == ["a", "b", "c"])
     m.toggleProject(URL(fileURLWithPath: "/w"))
     #expect(m.selection.isEmpty)
-}
-
-@MainActor @Test func cleanProjectOpensConfirmForWholeProject() throws {
-    let items = [projectItem("a", root: "/w"), projectItem("b", root: "/w"), projectItem("d", root: "/other")]
-    let m = try model(items: items) { plan, _ in receipt(for: plan) }
-    m.cleanProject(URL(fileURLWithPath: "/w"))
-    guard case .confirm(let plan) = m.screen else { Issue.record("expected confirm"); return }
-    #expect(plan.items.map(\.id) == ["a", "b"])
 }

@@ -12,7 +12,7 @@ struct ItemRow: View {
             Toggle("", isOn: Binding(get: { model.selection.contains(item.id) }, set: { _ in model.toggle(item.id) }))
                 .toggleStyle(.checkbox)
                 .labelsHidden()
-                .disabled(item.state != .ready)
+                .disabled(item.state == .unreadable)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title ?? item.target.title).lineLimit(1).truncationMode(.middle)
                 Text([bytes(item.bytes), item.lastUsed.map { "used \(relative($0))" }].compactMap { $0 }.joined(separator: " · "))
@@ -26,8 +26,6 @@ struct ItemRow: View {
             Spacer()
             if item.state == .unreadable {
                 Button("Enable") { FullDiskAccess.openSettings() }.controlSize(.small)
-            } else {
-                Button("Clean") { model.cleanItem(item.id) }.controlSize(.small)
             }
         }
         .padding(.leading, 12 + indent).padding(.trailing, 12).padding(.vertical, 7)
@@ -42,14 +40,6 @@ struct GroupView: View {
         let items = model.items(in: group)
         VStack(spacing: 0) {
             Header(title: group, back: { model.screen = .home })
-            if let message = model.inlineMessage {
-                Text(message)
-                    .font(.callout)
-                    .foregroundStyle(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(.orange.opacity(0.12))
-            }
             Divider()
             Scroll(maxHeight: 420) {
                 VStack(spacing: 0) {
@@ -86,7 +76,6 @@ struct ProjectsList: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Clean project") { model.cleanProject(project.id) }.controlSize(.small)
             }
             .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
             ForEach(project.items) { item in
@@ -140,7 +129,7 @@ struct ProjectCheckbox: View {
     let root: URL
 
     var body: some View {
-        let ready = model.projectItems(root).filter { $0.state == .ready }
+        let ready = model.projectItems(root).filter { $0.state != .unreadable }
         let chosen = ready.filter { model.selection.contains($0.id) }.count
         let symbol = chosen == 0 ? "square" : chosen == ready.count ? "checkmark.square.fill" : "minus.square.fill"
         Button { model.toggleProject(root) } label: {
