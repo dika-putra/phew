@@ -14,15 +14,32 @@ extension EnvironmentValues {
     @Entry var isSnapshot = false
 }
 
-/// A ScrollView, or a plain stack when rendering snapshots.
+/// A ScrollView sized to its content (up to `maxHeight`), or a plain stack for snapshots.
+/// In a MenuBarExtra window a ScrollView without a fixed height collapses to zero.
 struct Scroll<Content: View>: View {
     @Environment(\.isSnapshot) private var isSnapshot
     var maxHeight: CGFloat = 360
     @ViewBuilder let content: Content
+    @State private var contentHeight: CGFloat = 0
 
     var body: some View {
-        if isSnapshot { content } else { ScrollView { content }.frame(maxHeight: maxHeight) }
+        if isSnapshot {
+            content
+        } else {
+            ScrollView {
+                content.background(GeometryReader { geo in
+                    Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+                })
+            }
+            .onPreferenceChange(ContentHeightKey.self) { contentHeight = $0 }
+            .frame(height: min(max(contentHeight, 1), maxHeight))
+        }
     }
+}
+
+private struct ContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
 extension Tier {
