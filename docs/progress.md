@@ -2,9 +2,9 @@
 
 Resume here: read this file, then the plan named in "Current plan", then continue at "Next step".
 
-Current plan: docs/superpowers/plans/2026-10-21-m3-projects.md
-Branch: m3-projects
-Next step: Merge m3-projects if the user agrees, then write the M4 plan (menu bar app)
+Current plan: docs/superpowers/plans/2026-10-21-m4-menubar.md
+Branch: m4-menubar
+Next step: Task 1, Step 1 (M4)
 
 ## Carry into M4 (deferred from the M2 and M3 reviews)
 
@@ -49,3 +49,4 @@ Next step: Merge m3-projects if the user agrees, then write the M4 plan (menu ba
 | 2026-10-21 | M3 | Task 6: CLI | Add project scan to the CLI | phew config --add-root/--remove-root; projects ids in clean |
 | 2026-10-21 | M3 | Task 7: milestone check | Finish M3 | real scan: 5 projects, 9.87 GB in 20 s; roots kept |
 | 2026-10-21 | M3 | Final review fixes | Fix M3 review findings | 1 Critical + 3 Important fixed; minors in Carry into M4 |
+| 2026-10-21 | M4 | Task 0: plan | Add M4 plan | m3-projects merged to main |
