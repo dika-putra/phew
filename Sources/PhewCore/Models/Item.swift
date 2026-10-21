@@ -15,6 +15,8 @@ public struct Item: Sendable, Identifiable, Equatable {
     public let lastUsed: Date?
     public let state: ItemState
     public var preselected: Bool
+    /// Set for build and dependency folders found by the project scanner.
+    public var project: ProjectInfo?
 
     public init(id: String, target: PathTarget, urls: [URL], bytes: Int64, lastUsed: Date?, state: ItemState) {
         self.id = id
@@ -29,4 +31,12 @@ public struct Item: Sendable, Identifiable, Equatable {
     static func defaultSelection(_ target: PathTarget) -> Bool {
         target.tier != .dataLoss && target.flags.isDisjoint(with: [.heavy, .needsAdmin, .optIn])
     }
+}
+
+public struct ProjectInfo: Sendable, Equatable {
+    public let root: URL
+    public let name: String
+    public let stacks: [String]
+    public let lastModified: Date?
+    public let dormant: Bool
 }
