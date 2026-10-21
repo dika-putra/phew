@@ -4,15 +4,18 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m3-projects.md
 Branch: m3-projects
-Next step: Final review of m3-projects, then M4 plan
+Next step: Merge m3-projects if the user agrees, then write the M4 plan (menu bar app)
 
-## Carry into M3 (deferred from the M2 review)
+## Carry into M4 (deferred from the M2 and M3 reviews)
 
-- Hard links are deduped per url, not per item; a `contents` target can count a hard-linked file twice.
-- `phew clean` prints unreadable items under "Skipped, in use"; the heading should be "Skipped".
 - TOCTOU between `PathGuard.check` and `removeItem` (same-user race). Remove relative to an opened parent handle if it matters.
 - Nested custom targets are counted twice; cleaning both gives a `missingParent` failure.
 - `CleanPlan.needsAdmin` is ignored by the CLI. Handle it before M5 adds admin targets.
+- `git ls-files` gets every candidate path as an argument; a huge Laravel views folder can exceed ARG_MAX (fails safe as "Couldn't check git status").
+- Rust `target` is deleted directly; spec says `cargo clean` first (same result).
+- No running-process check for project artifacts (`next dev`, `vite`, `flutter run`). Add in M4.
+- The prune list also skips `bin obj deps _build .build .gradle .terraform`, beyond spec section 7; projects inside such folders are not found.
+- UI: monorepos produce many tiny items (8 KB `.turbo`); group or hide small ones in M4.
 
 ## Log
 
@@ -45,3 +48,4 @@ Next step: Final review of m3-projects, then M4 plan
 | 2026-10-21 | M3 | Task 5: ProjectScanner | Add ProjectScanner |  |
 | 2026-10-21 | M3 | Task 6: CLI | Add project scan to the CLI | phew config --add-root/--remove-root; projects ids in clean |
 | 2026-10-21 | M3 | Task 7: milestone check | Finish M3 | real scan: 5 projects, 9.87 GB in 20 s; roots kept |
+| 2026-10-21 | M3 | Final review fixes | Fix M3 review findings | 1 Critical + 3 Important fixed; minors in Carry into M4 |

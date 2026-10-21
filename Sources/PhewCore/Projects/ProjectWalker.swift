@@ -30,8 +30,11 @@ public enum ProjectWalker {
         var unreadable: [URL] = []
         let fm = FileManager.default
 
-        for root in roots.map(\.standardizedFileURL) {
-            var artifactPaths = Set<String>()
+        var artifactPaths = Set<String>()
+        // A root inside another root would be walked twice.
+        let all = roots.map(\.standardizedFileURL)
+        let unique = all.filter { r in !all.contains { $0 != r && r.pathComponents.starts(with: $0.pathComponents) } }
+        for root in unique {
             // Folders whose Python rule asks for recursive __pycache__ collection.
             var recursiveOwners: [(folder: [String], name: String, tier: Tier)] = []
             var failed: [URL] = []
@@ -104,6 +107,18 @@ public enum ProjectWalker {
         return WalkResult(projects: projects, unreadable: unreadable)
     }
 
+    /// The rule's relative path, but only if every component exists with exactly that name.
+    /// APFS is usually case-insensitive, so "Vendor" would otherwise pass as "vendor" while git,
+    /// asked about "vendor", misses the files tracked under "Vendor".
+    private static func exact(_ relative: String, in folder: URL) -> URL? {
+        var url = folder.standardizedFileURL
+        for part in relative.split(separator: "/").map(String.init) {
+            guard ((try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []).contains(part) else { return nil }
+            url = url.appending(path: part)
+        }
+        return url.standardizedFileURL
+    }
+
     private static func resolve(_ artifact: Artifact, in folder: URL) -> [FoundArtifact] {
         let fm = FileManager.default
         func isRealDir(_ url: URL) -> Bool {
@@ -112,12 +127,11 @@ public enum ProjectWalker {
         }
         switch artifact.kind {
         case .folder(let path), .contents(let path):
-            let url = folder.appending(path: path).standardizedFileURL
-            guard isRealDir(url) else { return [] }
+            guard let url = exact(path, in: folder), isRealDir(url) else { return [] }
             let contents = if case .contents = artifact.kind { true } else { false }
             return [FoundArtifact(url: url, tier: artifact.tier, contents: contents, files: [])]
         case .files(let path, let suffix):
-            let url = folder.appending(path: path).standardizedFileURL
+            guard let url = exact(path, in: folder) else { return [] }
             let files = ((try? fm.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)) ?? [])
                 .filter { $0.lastPathComponent.hasSuffix(suffix) }
                 .map(\.standardizedFileURL)

@@ -51,13 +51,14 @@ struct CleanCommand: AsyncParsableCommand {
             }
             // The shell does not expand ~ after "projects:", and stored roots are real paths (/tmp is /private/tmp).
             let normalized = projectIDs.map { id -> String in
-                guard id.hasPrefix("projects:") else { return id }
-                let url = expandTilde(String(id.dropFirst(9)), home: FileManager.default.homeDirectoryForCurrentUser)
+                let path = String(id.dropFirst(9))
+                guard id.hasPrefix("projects:"), path.hasPrefix("/") || path == "~" || path.hasPrefix("~/") else { return id }
+                let url = expandTilde(path, home: FileManager.default.homeDirectoryForCurrentUser)
                 return "projects:" + url.standardizedFileURL.resolvingSymlinksInPath().path
             }
             let match = matchProjectItems(normalized, in: projects.items)
             if let first = match.unknown.first {
-                throw ValidationError("Nothing to clean for \(first). Run `phew scan --group Projects` to see project ids.")
+                throw ValidationError("Nothing to clean for \(first). Use an absolute path, and run `phew scan --group Projects` to see project ids.")
             }
             items += match.matched
         }
