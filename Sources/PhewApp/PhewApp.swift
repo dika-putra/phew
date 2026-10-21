@@ -74,7 +74,9 @@ struct ContentView: View {
         case .home: HomeView(model: model)
         case .group(let name): GroupView(model: model, group: name)
         case .confirm(let plan):
-            ConfirmView(model: model, plan: plan, back: plan.items.first.map { .group($0.target.group) } ?? .home)
+            // Back to the group for a clean from one group, else (Quick clean) back to Home.
+            let groups = Set((plan.items + plan.skipped.map(\.item)).map(\.target.group))
+            ConfirmView(model: model, plan: plan, back: groups.count == 1 ? .group(groups.first!) : .home)
         case .cleaning(let title): CleaningView(title: title)
         case .receipt(let receipt): ReceiptView(model: model, receipt: receipt)
         case .settings: SettingsView(model: model)

@@ -65,7 +65,16 @@ struct HomeView: View {
     private func summary(_ s: Summary) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Reclaimable").font(.caption).foregroundStyle(.secondary)
-            Text(bytes(s.reclaimable)).font(.title2).fontWeight(.semibold)
+            HStack {
+                Text(bytes(s.reclaimable)).font(.title2).fontWeight(.semibold)
+                Spacer()
+                if s.reclaimable > 0 {
+                    Button("Quick clean") { model.quickClean() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(model.isCleaning)
+                        .help("Cleans build output and caches that come back on their own or by download. Shows the list first.")
+                }
+            }
             HStack(spacing: 6) {
                 ForEach(Tier.allCases, id: \.self) { tier in
                     Badge(text: "\(tier.label) \(bytes(s.byTier[tier] ?? 0))", color: tier.color)

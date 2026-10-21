@@ -163,3 +163,12 @@ private func receipt(for plan: CleanPlan) -> Receipt {
                     bytes: 1, lastUsed: nil, state: .ready)
     #expect(Reveal.urls(for: many, home: home).map(\.path) == ["/Users/t/Library/Caches"])
 }
+
+
+@MainActor @Test func quickCleanOpensConfirmForSafeItemsOnly() throws {
+    let items = [appItem("a"), appItem("b", tier: .dataLoss), appItem("c", state: .inUse(app: "Xcode"))]
+    let m = try model(items: items) { plan, _ in receipt(for: plan) }
+    m.quickClean()
+    guard case .confirm(let plan) = m.screen else { Issue.record("expected confirm"); return }
+    #expect(plan.items.map(\.id) == ["a"])
+}

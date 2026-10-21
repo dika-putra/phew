@@ -104,6 +104,13 @@ final class AppModel {
         if ids.allSatisfy(selection.contains) { selection.subtract(ids) } else { selection.formUnion(ids) }
     }
 
+    /// Everything that is safe to clean right now, behind the usual confirmation.
+    func quickClean() {
+        let items = summary.quickClean
+        guard !items.isEmpty else { return }
+        screen = .confirm(Planner.plan(items, running: running))
+    }
+
     func cleanSelected(in group: String) {
         let chosen = items(in: group).filter { selection.contains($0.id) }
         guard !chosen.isEmpty else { return }

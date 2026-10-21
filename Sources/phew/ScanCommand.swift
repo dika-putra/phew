@@ -16,7 +16,7 @@ struct ScanCommand: AsyncParsableCommand {
         """
     )
 
-    @Option(help: "Show only one group, for example Xcode, Node or Custom.")
+    @Option(help: "Show only one group, for example Xcode, Node or \"Extra folders\".")
     var group: String?
 
     @ArgumentParser.Flag(help: "Print JSON (schema version 1) instead of a table.")

@@ -9,8 +9,10 @@ public struct GroupSummary: Sendable, Identifiable {
 public struct Summary: Sendable {
     public let byTier: [Tier: Int64]
     public let total: Int64
-    /// What a bulk clean of safe items would free: no data loss, no opt-in, nothing in use.
+    /// What Quick clean frees: the preselected items that are ready (no data loss, heavy,
+    /// opt-in or active project, nothing in use). Same number as the Quick clean button.
     public let reclaimable: Int64
+    public let quickClean: [Item]
     public let groups: [GroupSummary]
 
     public init(_ items: [Item]) {
@@ -18,9 +20,8 @@ public struct Summary: Sendable {
         for item in items { byTier[item.target.tier, default: 0] += item.bytes }
         self.byTier = byTier
         total = items.reduce(0) { $0 + $1.bytes }
-        reclaimable = items.filter {
-            $0.target.tier != .dataLoss && !$0.target.flags.contains(.optIn) && $0.state == .ready
-        }.reduce(0) { $0 + $1.bytes }
+        quickClean = items.filter { $0.preselected && $0.state == .ready }
+        reclaimable = quickClean.reduce(0) { $0 + $1.bytes }
         var order: [String] = []
         var byGroup: [String: [Item]] = [:]
         for item in items {

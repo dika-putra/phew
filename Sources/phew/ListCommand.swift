@@ -7,7 +7,7 @@ struct ListCommand: ParsableCommand {
         commandName: "list",
         abstract: "List every target id with its tier and flags.",
         discussion: """
-        Use the ids with `phew clean`. Custom targets from ~/.config/phew/config.json are listed under Custom.
+        Use the ids with `phew clean`. Extra folders from customTargets in ~/.config/phew/config.json are listed under "Extra folders".
 
         Examples:
           phew list
@@ -15,7 +15,7 @@ struct ListCommand: ParsableCommand {
         """
     )
 
-    @Option(help: "Show only one group, for example Xcode, Node or Custom.")
+    @Option(help: "Show only one group, for example Xcode, Node or \"Extra folders\".")
     var group: String?
 
     func run() throws {

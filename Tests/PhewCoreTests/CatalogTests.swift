@@ -56,6 +56,6 @@ private func target(_ id: String) -> PathTarget? { builtin.first { $0.id == id }
 @Test func customTargetsAppended() {
     let all = Catalog.all(custom: [CustomTargetSpec(id: "custom.x", title: "X", paths: ["~/x"], tier: .redownload)])
     #expect(all.last?.id == "custom.x")
-    #expect(all.last?.group == "Custom")
+    #expect(all.last?.group == "Extra folders")
     #expect(all.last?.flags.isEmpty == true)
 }

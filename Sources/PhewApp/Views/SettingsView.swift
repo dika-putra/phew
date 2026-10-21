@@ -88,11 +88,12 @@ struct SettingsView: View {
                         Button("Install phew") { installCLI() }.controlSize(.small)
                     }
                     if let cliMessage { note(cliMessage, .secondary) }
-                    row("Custom targets") {
+                    row("Extra folders") {
                         Text("\(config.validTargets.count)").foregroundStyle(.secondary)
                         Button("Open file") { NSWorkspace.shared.open(store.url) }.controlSize(.small)
                         Button("Reload") { config = store.load() }.controlSize(.small)
                     }
+                    note("Folders Phew doesn't know yet, for example a tool's cache. Add them to customTargets in the config file.", .secondary)
                     ForEach(config.issues, id: \.message) { note($0.message, .red) }
                     if let saveError { note(saveError, .red) }
                     about

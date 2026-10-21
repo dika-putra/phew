@@ -14,6 +14,14 @@ private func gi(_ id: String, _ group: String, _ bytes: Int64, tier: Tier = .reg
     #expect(s.total == 35)
 }
 
+@Test func reclaimableEqualsPreselectedReadyItems() {
+    var active = gi("p", "Projects", 640)
+    active.preselected = false
+    let s = Summary([gi("a", "X", 10), gi("h", "X", 320, flags: [.heavy]), active])
+    #expect(s.reclaimable == 10)
+    #expect(s.quickClean.map(\.id) == ["a"])
+}
+
 @Test func reclaimableExcludesDataLossOptInAndInUse() {
     let s = Summary([gi("a", "X", 10), gi("b", "X", 20, tier: .dataLoss), gi("c", "X", 40, flags: [.optIn]),
                      gi("d", "X", 80, state: .inUse(app: "Xcode")), gi("e", "X", 160, state: .unreadable)])
