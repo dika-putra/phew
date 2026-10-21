@@ -212,7 +212,7 @@ The project view groups artifacts per project, shows last modified and a "dorman
 
 ## 9. Version managers
 
-One protocol, one type per tool. All show: installed versions with size, which projects pin each version, and a lock on the active and default version (locked rows have no Clean button).
+One protocol, one type per tool. All show: installed versions with size, which projects pin each version, and a lock on the active and default version (locked rows have no checkbox).
 
 | Tool | List | Pin files | Remove |
 |---|---|---|---|
@@ -258,7 +258,7 @@ Popover, top to bottom:
 6. Gear: settings (appearance, project roots, dormant days, launch at login, low space alert on/off and threshold, custom targets, FDA status, install CLI).
 
 Clean flow inside the popover (no separate window):
-- In-use items are never cleaned. Per-item Clean on an in-use item shows an info message instead of a confirmation: what is running and what to do ("Xcode is running. Quit Xcode to clean DerivedData."). Bulk Clean leaves in-use items out and lists them in the confirmation under "Skipped, in use" with the same message. If an app starts between the confirmation and the delete, the item is skipped and listed in the receipt as "skipped, in use", not as a failure.
+- In-use items are never cleaned and never preselected. They can still be ticked: the confirmation then lists them under "Skipped, in use" with what is running and what to do ("Xcode is running. Quit Xcode to clean DerivedData."). If an app starts between the confirmation and the delete, the item is skipped and listed in the receipt as "skipped, in use", not as a failure.
 - Clean (per item or bulk) shows an inline confirmation view: list of items, total size, tier per item. `dataLoss` items get a red line saying what is lost. `needsAdmin` items are confirmed and run separately with the admin prompt (`osascript ... with administrator privileges`).
 - During the clean: progress per item. The popover may close; the clean continues and the menu bar icon shows activity.
 - Receipt: "Phew. 42.3 GB freed." using measured bytes, plus failures per item with the reason. Volume free space before and after.
