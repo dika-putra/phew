@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m3-projects.md
 Branch: m3-projects
-Next step: Task 3, Step 1 (M3)
+Next step: Task 4, Step 1 (M3)
 
 ## Carry into M3 (deferred from the M2 review)
 
@@ -40,3 +40,4 @@ Next step: Task 3, Step 1 (M3)
 | 2026-10-21 | M3 | Task 0: plan | Add M3 plan | m2-clean merged to main |
 | 2026-10-21 | M3 | Task 1: M2 leftovers | Count hard links once per item |  |
 | 2026-10-21 | M3 | Task 2: project rules | Add project rules |  |
+| 2026-10-21 | M3 | Task 3: ProjectWalker | Add ProjectWalker |  |
