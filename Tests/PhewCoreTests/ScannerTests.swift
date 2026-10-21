@@ -100,3 +100,14 @@ func target(_ id: String, _ paths: [String], tier: Tier = .regenerates, flags: S
         #expect(items[0].urls.map(\.lastPathComponent) == ["other"])
     }
 }
+
+@Test func hardLinkAcrossChildrenCountedOnce() async throws {
+    try await withTempDirAsync { home in
+        let file = home.appending(path: "C/a/file")
+        try writeFile(file, bytes: 1_048_576)
+        try FileManager.default.createDirectory(at: home.appending(path: "C/b"), withIntermediateDirectories: true)
+        try FileManager.default.linkItem(at: file, to: home.appending(path: "C/b/link"))
+        let items = await TargetScanner(home: home, running: notRunning).scan([target("c", ["~/C"], contents: true)])
+        #expect(items[0].bytes < 2 * 1_048_576)
+    }
+}

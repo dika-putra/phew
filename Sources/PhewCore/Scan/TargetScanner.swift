@@ -47,13 +47,9 @@ public struct TargetScanner: Sendable {
             }
         }
 
-        var bytes: Int64 = 0
-        var unreadable = 0
-        for url in urls {
-            let size = DiskSize.allocated(url)
-            bytes += size.bytes
-            if size.unreadable.contains(url) { unreadable += 1 }
-        }
+        let size = DiskSize.allocated(urls)
+        let bytes = size.bytes
+        let unreadable = urls.filter { size.unreadable.contains($0) }.count
         let lastUsed = paths.compactMap {
             try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
         }.max()

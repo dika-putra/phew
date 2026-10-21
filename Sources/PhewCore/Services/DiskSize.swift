@@ -14,18 +14,28 @@ public enum DiskSize {
     /// Allocated size of a file or folder. Hidden entries are counted, hard links once,
     /// symlinks are not followed and folders on another volume (mounts) are not entered.
     public static func allocated(_ url: URL) -> SizeResult {
+        allocated([url])
+    }
+
+    /// One hard-link set for all urls, so a file linked under two of them counts once.
+    public static func allocated(_ urls: [URL]) -> SizeResult {
         var result = SizeResult(bytes: 0, unreadable: [])
+        var seen = Set<NSObject>()
+        for url in urls { measure(url, into: &result, seen: &seen) }
+        return result
+    }
+
+    private static func measure(_ url: URL, into result: inout SizeResult, seen: inout Set<NSObject>) {
         let root: URLResourceValues
         do {
             root = try url.resourceValues(forKeys: Set(keys))
         } catch {
             // Missing is size 0; anything else (permissions, privacy protection) is unreadable.
-            if (error as? CocoaError)?.code != .fileReadNoSuchFile { result.unreadable = [url] }
-            return result
+            if (error as? CocoaError)?.code != .fileReadNoSuchFile { result.unreadable.append(url) }
+            return
         }
-        if root.isSymbolicLink == true { return result }
+        if root.isSymbolicLink == true { return }
         let rootVolume = root.volumeIdentifier as? NSObject
-        var seen = Set<NSObject>()
 
         func add(_ v: URLResourceValues) {
             if (v.linkCount ?? 1) > 1, let id = v.fileResourceIdentifier as? NSObject {
@@ -36,7 +46,7 @@ public enum DiskSize {
 
         guard root.isDirectory == true else {
             add(root)
-            return result
+            return
         }
         var unreadable: [URL] = []
         let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: keys, options: []) { failed, _ in
@@ -53,8 +63,7 @@ public enum DiskSize {
             }
             add(v)
         }
-        result.unreadable = unreadable
-        return result
+        result.unreadable += unreadable
     }
 
     /// Free space as Finder shows it (includes purgeable space macOS can reclaim on demand).

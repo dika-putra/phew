@@ -69,7 +69,7 @@ struct CleanCommand: AsyncParsableCommand {
             }
         }
         if !plan.skipped.isEmpty {
-            print("\nSkipped, in use")
+            print("\nSkipped")
             plan.skipped.forEach { print("  \($0.reason)") }
         }
         print("\nTotal: \(formatBytes(plan.expectedBytes)). Deleted for good, not moved to the Trash.")
