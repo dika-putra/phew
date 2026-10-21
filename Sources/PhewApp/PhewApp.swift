@@ -45,6 +45,11 @@ struct ContentView: View {
     var body: some View {
         switch model.screen {
         case .home: HomeView(model: model)
+        case .group(let name): GroupView(model: model, group: name)
+        case .confirm(let plan):
+            ConfirmView(model: model, plan: plan, back: plan.items.first.map { .group($0.target.group) } ?? .home)
+        case .cleaning(let title): CleaningView(title: title)
+        case .receipt(let receipt): ReceiptView(model: model, receipt: receipt)
         default:
             VStack {
                 Header(title: "Coming soon", back: { model.screen = .home })

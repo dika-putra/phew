@@ -11,6 +11,17 @@ enum Snapshots {
         var screens: [(String, Screen)] = [("home", .home), ("settings", .settings)]
         if let group = model.summary.groups.first?.id { screens.append(("group", .group(group))) }
         if model.summary.groups.contains(where: { $0.id == "Projects" }) { screens.append(("projects", .group("Projects"))) }
+        if let group = model.summary.groups.first?.id {
+            // Confirm and receipt are drawn from a plan only; nothing is deleted here.
+            let plan = Planner.plan(Array(model.items(in: group).prefix(4)), running: .live)
+            screens.append(("confirm", .confirm(plan)))
+            let entries = plan.items.map { ReceiptEntry(itemID: $0.id, title: $0.target.title, claimed: $0.bytes,
+                                                        measured: $0.bytes, failures: [], skippedReason: nil) }
+                + plan.skipped.map { ReceiptEntry(itemID: $0.item.id, title: $0.item.target.title, claimed: $0.item.bytes,
+                                                  measured: 0, failures: [], skippedReason: $0.reason) }
+            screens.append(("receipt", .receipt(Receipt(entries: entries, freeBefore: model.available,
+                                                        freeAfter: model.available + plan.expectedBytes))))
+        }
         for (name, screen) in screens {
             model.screen = screen
             for scheme in [ColorScheme.light, .dark] {

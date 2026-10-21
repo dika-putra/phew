@@ -53,3 +53,70 @@ actor Gate {
     await first.value
     #expect(!model.isScanning)
 }
+
+private let quiet = RunningCheck(runningBundleIDs: { [:] }, processMatches: { _ in false })
+
+@MainActor private func model(items: [Item], running: RunningCheck = quiet,
+                              execute: @escaping @Sendable (CleanPlan, @escaping @Sendable (String) -> Void) async -> Receipt) throws -> AppModel {
+    let cache = tempCache()
+    try cache.save(ScanSnapshot(date: .now, items: items, skippedProjects: 0, unreadable: []))
+    return AppModel(scan: { fatalError("no scan") }, cache: cache, available: { 1 }, running: running, execute: execute)
+}
+
+private func receipt(for plan: CleanPlan) -> Receipt {
+    Receipt(entries: plan.items.map { ReceiptEntry(itemID: $0.id, title: $0.target.title, claimed: $0.bytes,
+                                                   measured: $0.bytes, failures: [], skippedReason: nil) },
+            freeBefore: 1, freeAfter: 2)
+}
+
+@MainActor @Test func confirmRunsExecutorAndShowsReceipt() async throws {
+    let m = try model(items: [appItem("a")]) { plan, _ in receipt(for: plan) }
+    m.cleanItem("a")
+    guard case .confirm = m.screen else { Issue.record("expected confirm, got \(m.screen)"); return }
+    m.confirm()
+    await m.waitForClean()
+    guard case .receipt(let r) = m.screen else { Issue.record("expected receipt"); return }
+    #expect(r.measuredTotal == 10)
+}
+
+@MainActor @Test func inUseItemDoesNotOpenConfirm() throws {
+    let t = PathTarget(id: "dd", group: "Xcode", title: "DerivedData", tier: .regenerates, paths: ["~/dd"],
+                       skipIfRunning: ["com.apple.dt.Xcode"])
+    let it = Item(id: "dd", target: t, urls: [], bytes: 1, lastUsed: nil, state: .ready)
+    let xcode = RunningCheck(runningBundleIDs: { ["com.apple.dt.Xcode": "Xcode"] }, processMatches: { _ in false })
+    let m = try model(items: [it], running: xcode) { plan, _ in receipt(for: plan) }
+    m.screen = .group("Xcode")
+    m.cleanItem("dd")
+    #expect(m.screen == .group("Xcode"))
+    #expect(m.inlineMessage == "Xcode is running. Quit Xcode to clean DerivedData.")
+}
+
+@MainActor @Test func cleanSurvivesScreenChange() async throws {
+    let m = try model(items: [appItem("a")]) { plan, _ in
+        try? await Task.sleep(for: .milliseconds(100))
+        return receipt(for: plan)
+    }
+    m.cleanItem("a")
+    m.confirm()
+    m.screen = .home
+    await m.waitForClean()
+    #expect(m.lastReceipt != nil)
+    if case .receipt = m.screen {} else { Issue.record("receipt not shown after clean") }
+}
+
+@MainActor @Test func cleanedItemsLeaveSnapshot() async throws {
+    let m = try model(items: [appItem("a"), appItem("b")]) { plan, _ in receipt(for: plan) }
+    m.cleanItem("a")
+    m.confirm()
+    await m.waitForClean()
+    #expect(m.snapshot?.items.map(\.id) == ["b"])
+    #expect(!m.selection.contains("a"))
+}
+
+@MainActor @Test func inUseItemsAreNotPreselected() async {
+    let busy = appItem("busy", state: .inUse(app: "Gradle"))
+    let m = AppModel(scan: { ScanSnapshot(date: .now, items: [appItem("a"), busy], skippedProjects: 0, unreadable: []) },
+                     cache: tempCache(), available: { 1 })
+    await m.refresh()
+    #expect(m.selection == ["a"])
+}

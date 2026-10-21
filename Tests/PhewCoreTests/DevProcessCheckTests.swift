@@ -43,3 +43,17 @@ private func stub(_ list: [(String, String)]) -> DevProcessCheck {
         #expect(DevProcessCheck(commands: ["sleep"]).runningIn(dir) == "sleep")
     }
 }
+
+@Test func devServerPatterns() {
+    for cmd in ["node /p/node_modules/.bin/next dev", "node /x/vite/bin/vite.js", "flutter run -d macos",
+                "java -cp gradle-launcher.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.7",
+                "php artisan serve", "ruby bin/rails server", "python manage.py runserver", "bun run dev",
+                "node /p/node_modules/.bin/nuxt dev", "npm run dev", "pnpm dev"] {
+        #expect(devServerName(cmd) != nil, "\(cmd)")
+    }
+    for cmd in ["node /u/.nvm/versions/node/v24/bin/gitnexus mcp", "npm exec @dika-putra/example-mcp",
+                "node /Applications/Devin.app/Contents/Resources/app/extensions/tsserver.js"] {
+        #expect(devServerName(cmd) == nil, "\(cmd)")
+    }
+    #expect(devServerName("node /p/node_modules/.bin/next dev") == "next dev")
+}

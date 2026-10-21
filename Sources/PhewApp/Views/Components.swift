@@ -114,3 +114,7 @@ struct Header: View {
         .padding(.vertical, 10)
     }
 }
+
+func count(_ n: Int, _ noun: String) -> String {
+    "\(n) \(noun)\(n == 1 ? "" : "s")"
+}
