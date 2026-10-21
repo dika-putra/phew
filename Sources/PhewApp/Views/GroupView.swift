@@ -5,6 +5,7 @@ struct ItemRow: View {
     @Bindable var model: AppModel
     let item: Item
     var title: String? = nil
+    var indent: CGFloat = 0
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -29,7 +30,7 @@ struct ItemRow: View {
                 Button("Clean") { model.cleanItem(item.id) }.controlSize(.small)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 7)
+        .padding(.leading, 12 + indent).padding(.trailing, 12).padding(.vertical, 7)
     }
 }
 
@@ -74,18 +75,22 @@ struct ProjectsList: View {
 
     var body: some View {
         ForEach(projectGroups(items)) { project in
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text(project.info.name).fontWeight(.semibold)
-                    if project.info.dormant { Badge(text: "Dormant", color: .secondary) }
-                    Spacer()
-                    Text(bytes(project.bytes)).foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 8) {
+                ProjectCheckbox(model: model, root: project.id)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(project.info.name).fontWeight(.semibold)
+                        if project.info.dormant { Badge(text: "Dormant", color: .secondary) }
+                    }
+                    Text("\(bytes(project.bytes)) · \(project.info.stacks.joined(separator: ", "))")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-                Text(project.info.stacks.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("Clean project") { model.cleanProject(project.id) }.controlSize(.small)
             }
             .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
             ForEach(project.items) { item in
-                ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)))
+                ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)), indent: 22)
             }
             if !project.small.isEmpty {
                 Button {
@@ -101,7 +106,7 @@ struct ProjectsList: View {
                 .padding(.horizontal, 12).padding(.vertical, 4)
                 if expanded.contains(project.id) {
                     ForEach(project.small) { item in
-                        ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)))
+                        ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)), indent: 22)
                     }
                 }
             }
@@ -126,5 +131,23 @@ struct SelectionFooter: View {
             }
             .padding(12)
         }
+    }
+}
+
+/// Checked when all cleanable items of the project are selected, a dash when some are.
+struct ProjectCheckbox: View {
+    @Bindable var model: AppModel
+    let root: URL
+
+    var body: some View {
+        let ready = model.projectItems(root).filter { $0.state == .ready }
+        let chosen = ready.filter { model.selection.contains($0.id) }.count
+        let symbol = chosen == 0 ? "square" : chosen == ready.count ? "checkmark.square.fill" : "minus.square.fill"
+        Button { model.toggleProject(root) } label: {
+            Image(systemName: symbol).foregroundStyle(chosen == 0 ? Color.secondary : Color.accentColor)
+        }
+        .buttonStyle(.borderless)
+        .disabled(ready.isEmpty)
+        .accessibilityLabel("Select project")
     }
 }

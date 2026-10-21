@@ -108,6 +108,27 @@ final class AppModel {
         screen = .confirm(plan)
     }
 
+    func projectItems(_ root: URL) -> [Item] {
+        snapshot?.items.filter { $0.project?.root == root } ?? []
+    }
+
+    /// Selects every cleanable item of the project, or clears them when all are selected.
+    func toggleProject(_ root: URL) {
+        let ids = projectItems(root).filter { $0.state == .ready }.map(\.id)
+        if ids.allSatisfy(selection.contains) { selection.subtract(ids) } else { selection.formUnion(ids) }
+    }
+
+    func cleanProject(_ root: URL) {
+        let items = projectItems(root)
+        guard !items.isEmpty else { return }
+        let plan = Planner.plan(items, running: running)
+        if plan.items.isEmpty, let reason = plan.skipped.first?.reason {
+            inlineMessage = reason
+            return
+        }
+        screen = .confirm(plan)
+    }
+
     func cleanSelected(in group: String) {
         let chosen = items(in: group).filter { selection.contains($0.id) }
         guard !chosen.isEmpty else { return }

@@ -130,3 +130,28 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     await m.refresh()
     #expect(m.selection == ["a"])
 }
+
+@MainActor private func projectItem(_ id: String, root: String, state: ItemState = .ready) -> Item {
+    var i = appItem(id, state: state)
+    i.project = ProjectInfo(root: URL(fileURLWithPath: root), name: "web", stacks: ["Node"], lastModified: nil, dormant: false)
+    return i
+}
+
+@MainActor @Test func toggleProjectSelectsAllReadyItems() throws {
+    let items = [projectItem("a", root: "/w"), projectItem("b", root: "/w"), projectItem("c", root: "/w", state: .inUse(app: "vite")),
+                 projectItem("d", root: "/other")]
+    let m = try model(items: items) { plan, _ in receipt(for: plan) }
+    m.selection = []
+    m.toggleProject(URL(fileURLWithPath: "/w"))
+    #expect(m.selection == ["a", "b"])
+    m.toggleProject(URL(fileURLWithPath: "/w"))
+    #expect(m.selection.isEmpty)
+}
+
+@MainActor @Test func cleanProjectOpensConfirmForWholeProject() throws {
+    let items = [projectItem("a", root: "/w"), projectItem("b", root: "/w"), projectItem("d", root: "/other")]
+    let m = try model(items: items) { plan, _ in receipt(for: plan) }
+    m.cleanProject(URL(fileURLWithPath: "/w"))
+    guard case .confirm(let plan) = m.screen else { Issue.record("expected confirm"); return }
+    #expect(plan.items.map(\.id) == ["a", "b"])
+}
