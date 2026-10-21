@@ -34,7 +34,8 @@ public struct Executor: Sendable {
         // Measured right before deleting, so a stale scan can never inflate the result.
         let before = item.urls.reduce(Int64(0)) { $0 + DiskSize.allocated($1).bytes }
         var failures: [String] = []
-        for url in item.urls {
+        // Items may come from a cached scan: a path that is gone now is not a failure.
+        for url in item.urls where (try? FileManager.default.attributesOfItem(atPath: url.path)) != nil {
             do {
                 try guard_.check(url)
                 try FileManager.default.removeItem(at: url)

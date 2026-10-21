@@ -1,12 +1,12 @@
 import Foundation
 
-public enum ItemState: Sendable, Equatable {
+public enum ItemState: Codable, Sendable, Equatable {
     case ready
     case inUse(app: String)
     case unreadable
 }
 
-public struct Item: Sendable, Identifiable, Equatable {
+public struct Item: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let target: PathTarget
     /// What gets deleted: the target's paths, or for a `contents` target their children.
@@ -33,7 +33,7 @@ public struct Item: Sendable, Identifiable, Equatable {
     }
 }
 
-public struct ProjectInfo: Sendable, Equatable {
+public struct ProjectInfo: Codable, Sendable, Equatable {
     public let root: URL
     public let name: String
     public let stacks: [String]

@@ -1,4 +1,4 @@
-public struct PathTarget: Sendable, Identifiable, Equatable {
+public struct PathTarget: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let group: String
     public let title: String
