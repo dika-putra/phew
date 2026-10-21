@@ -117,9 +117,11 @@ struct Header: View {
     var body: some View {
         HStack(spacing: 8) {
             if let back {
-                Button(action: back) { Image(systemName: "chevron.left") }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Back")
+                Button(action: back) { Label("Back", systemImage: "chevron.left") }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .keyboardShortcut(.cancelAction)
+                    .help("Back (Esc)")
             } else {
                 Image(systemName: "wind").foregroundStyle(.tint)
             }
