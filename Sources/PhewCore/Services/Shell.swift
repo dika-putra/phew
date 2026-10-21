@@ -38,6 +38,14 @@ public enum Shell {
         process.standardOutput = out
         process.standardError = err
         process.standardInput = FileHandle.nullDevice
+        // terminationHandler, not waitUntilExit: after an await the task may resume on another
+        // thread, and waitUntilExit there was seen to wait forever for a child that had exited.
+        let exit = AsyncStream<Int32> { continuation in
+            process.terminationHandler = { p in
+                continuation.yield(p.terminationStatus)
+                continuation.finish()
+            }
+        }
         try process.run()
 
         // ponytail: kills only the direct child; a grandchild holding the pipe open still blocks.
@@ -53,11 +61,12 @@ public enum Shell {
         async let outData = Task.detached { out.fileHandleForReading.readDataToEndOfFile() }.value
         async let errData = Task.detached { err.fileHandleForReading.readDataToEndOfFile() }.value
         let (o, e) = await (outData, errData)
-        process.waitUntilExit()
+        var status: Int32 = -1
+        for await code in exit { status = code }
         timer.cancel()
         if await timer.value { throw ShellError.timedOut(executable) }
         return ShellResult(
-            status: process.terminationStatus,
+            status: status,
             stdout: String(decoding: o, as: UTF8.self),
             stderr: String(decoding: e, as: UTF8.self)
         )

@@ -47,3 +47,15 @@ import Testing
         #expect(Shell.which("phew-rel", searchPath: ["", ".", relative]) == nil)
     }
 }
+
+@Test(.timeLimit(.minutes(1))) func manyConcurrentRunsAllFinish() async throws {
+    try await withThrowingTaskGroup(of: Int32.self) { group in
+        for i in 0..<300 {
+            group.addTask {
+                i % 2 == 0 ? try await Shell.run("git", ["--version"]).status
+                           : try await Shell.run("/bin/sh", ["-c", "git --version < /dev/null"]).status
+            }
+        }
+        for try await status in group { #expect(status == 0) }
+    }
+}
