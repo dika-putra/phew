@@ -66,7 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     private func setUpStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "wind", accessibilityDescription: "Phew")
+        item.button?.image = StatusIcon.image()
         item.button?.target = self
         item.button?.action = #selector(togglePopover)
         statusItem = item

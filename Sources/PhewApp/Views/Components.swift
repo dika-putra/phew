@@ -144,7 +144,7 @@ struct Header: View {
                 IconButton(systemName: "chevron.left", label: "Back (Esc)", action: back)
                     .keyboardShortcut(.cancelAction)
             } else {
-                Image(systemName: "wind").foregroundStyle(.tint)
+                Image(nsImage: StatusIcon.image()).foregroundStyle(.tint)
             }
             Text(title).font(.headline)
             Spacer()
