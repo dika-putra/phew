@@ -36,6 +36,7 @@ public enum Planner {
 
     /// Shared with Executor so the plan and the receipt show the same text.
     static func skipReason(_ item: Item, running: RunningCheck, dev: DevProcessCheck? = nil) -> String? {
+        if case .locked(let reason) = item.state { return "\(reason). Phew won't remove it." }
         if let app = running.firstRunning(item.target.skipIfRunning) {
             return inUseMessage(app: app, title: item.target.title)
         }

@@ -8,6 +8,7 @@ public func scanJSON(_ items: [Item], available: Int64) throws -> Data {
         case .ready: "ready"
         case .inUse: "inUse"
         case .unreadable: "unreadable"
+        case .locked: "locked"
         }
         var entry: [String: Any] = [
             "id": item.id,

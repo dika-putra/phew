@@ -14,6 +14,7 @@ func stateText(_ state: ItemState) -> String {
     case .ready: ""
     case .inUse(let app): "in use: \(app)"
     case .unreadable: "can't read"
+    case .locked(let reason): "locked: \(reason)"
     }
 }
 

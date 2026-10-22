@@ -21,7 +21,7 @@ let package = Package(
             ]
         ),
         .executableTarget(name: "PhewApp", dependencies: ["PhewCore"]),
-        .testTarget(name: "PhewCoreTests", dependencies: ["PhewCore"]),
+        .testTarget(name: "PhewCoreTests", dependencies: ["PhewCore"], resources: [.copy("Fixtures")]),
         .testTarget(name: "PhewAppTests", dependencies: ["PhewApp", "PhewCore"]),
     ]
 )

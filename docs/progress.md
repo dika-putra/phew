@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5-tools.md
 Branch: m5-tools
-Next step: Task 1, Step 1 (M5)
+Next step: Task 2, Step 1 (M5)
 
 ## Carry into M5 (deferred from the M2, M3 and M4 reviews)
 
@@ -64,3 +64,4 @@ Next step: Task 1, Step 1 (M5)
 | 2026-10-22 | M4 | Fix after review | Use a plain AppKit entry point | empty "Phew Settings" window came from the placeholder SwiftUI Settings scene |
 | 2026-10-22 | M4 | UI fixes after review | Give the popover a solid background | AppKit entry point, no initial focus, appearance on popover, solid background |
 | 2026-10-22 | M5 | Task 0: plan | Add M5 plan | m4-menubar merged to main |
+| 2026-10-22 | M5 | Task 1: removal kinds | Add command removal to the executor |  |

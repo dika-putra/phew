@@ -89,6 +89,7 @@ struct StateBadge: View {
         case .ready: EmptyView()
         case .inUse(let app): Badge(text: "In use: \(app)", color: .orange)
         case .unreadable: Badge(text: "Needs Full Disk Access", color: .purple)
+        case .locked(let reason): Badge(text: "Locked: \(reason)", color: .secondary)
         }
     }
 }
