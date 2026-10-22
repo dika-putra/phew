@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m6-release.md
 Branch: m6-release
-Next step: Task 2, Step 1 (M6): ask the user for screenshots
+Next step: Task 3, Step 1 (M6)
 
 ## M5.5 decisions (UI review, 2026-10-22)
 
@@ -114,3 +114,4 @@ Next step: Task 2, Step 1 (M6): ask the user for screenshots
 | 2026-10-22 | M5.5 | Final review fixes | Select items that become ready on refresh | 0 Critical, 1 Important fixed with test; minors tested or carried |
 | 2026-10-22 | M6 | Merge main | Merge branch 'main' into m6-release | brings M5.5 (UI polish, logo) into the M6 branch |
 | 2026-10-22 | M6 | Task 1: CLI help, sudo, failure text | Polish CLI help and step failure text | PhewCLITests added; sudo -v first; failure "<title>: <last stderr line>"; root help shows scan/clean/config |
+| 2026-10-22 | M6 | Task 2: README, NOTICE | Add README and NOTICE | screenshots skipped ("Screenshots coming"); README commands run: scan, clean --dry-run, clean (asks, needs a terminal), list, versions, config. HOME= does not redirect phew (getpwuid home): a test root landed in the real config and was removed |

@@ -1,0 +1,8 @@
+Phew
+Copyright (c) 2026 Dika Putra. MIT License, see LICENSE.
+
+Part of the cache path list in Sources/PhewCore/Catalog/BuiltinCatalog.swift comes from
+PureMac (MIT), https://github.com/momenbasel/PureMac.
+
+The menu bar layout took ideas from mac-cleaner-cli (MIT),
+https://github.com/guhcostan/mac-cleaner-cli. No code was copied from it.
