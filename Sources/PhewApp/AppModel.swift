@@ -39,7 +39,8 @@ final class AppModel {
          },
          notify: @escaping @Sendable (String) -> Void = { Notifier.post($0) },
          alertSettings: @escaping @Sendable () -> LowSpaceAlert = { ConfigStore().load().config.lowSpaceAlert },
-         defaults: UserDefaults = .standard) {
+         defaults: UserDefaults = .standard,
+         reconcile: @Sendable (ScanSnapshot) -> ScanSnapshot = AppModel.liveReconcile) {
         self.notify = notify
         self.alertSettings = alertSettings
         self.defaults = defaults
@@ -48,7 +49,7 @@ final class AppModel {
         self.availableSpace = available
         self.running = running
         self.execute = execute
-        snapshot = cache.load()
+        snapshot = cache.load().map(reconcile)
         self.available = available()
         selection = Self.defaultSelection(snapshot?.items ?? [])
     }
@@ -68,8 +69,12 @@ final class AppModel {
         guard !isScanning else { return }
         isScanning = true
         let result = await scan()
+        let oldIDs = Set(snapshot?.items.map(\.id) ?? [])
         snapshot = result
-        selection = Self.defaultSelection(result.items)
+        // Keep what the user ticked or unticked; only new items get the default selection.
+        let newIDs = Set(result.items.map(\.id))
+        selection = selection.intersection(newIDs)
+            .union(Self.defaultSelection(result.items.filter { !oldIDs.contains($0.id) }))
         available = availableSpace()
         try? cache.save(result)
         isScanning = false
@@ -139,9 +144,10 @@ final class AppModel {
     /// Updates the cached scan from what was measured, instead of rescanning everything.
     private func apply(_ receipt: Receipt) {
         guard var snap = snapshot else { return }
-        for entry in receipt.entries where entry.skippedReason == nil && entry.measured > 0 {
+        for entry in receipt.entries where entry.skippedReason == nil {
             guard let i = snap.items.firstIndex(where: { $0.id == entry.itemID }) else { continue }
             let left = snap.items[i].bytes - entry.measured
+            // No failures means the paths are gone, even when they were already gone (measured 0).
             if entry.failures.isEmpty || left <= 0 {
                 snap.items.remove(at: i)
                 selection.remove(entry.itemID)
@@ -161,6 +167,12 @@ final class AppModel {
 
     func toggle(_ id: String) {
         if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
+    }
+
+    nonisolated static func liveReconcile(_ snapshot: ScanSnapshot) -> ScanSnapshot {
+        let loaded = ConfigStore().load()
+        return snapshot.reconciled(targets: Catalog.all(custom: loaded.validTargets),
+                                   projectRoots: loaded.config.projectRoots.map { URL(fileURLWithPath: $0) })
     }
 
     nonisolated static func liveScan() async -> ScanSnapshot {

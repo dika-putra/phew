@@ -3,10 +3,13 @@ import Foundation
 public struct Executor: Sendable {
     let home: URL
     let running: RunningCheck
+    let devProcesses: DevProcessCheck
 
-    public init(home: URL = FileManager.default.homeDirectoryForCurrentUser, running: RunningCheck = .live) {
+    public init(home: URL = FileManager.default.homeDirectoryForCurrentUser, running: RunningCheck = .live,
+                devProcesses: DevProcessCheck = .live) {
         self.home = home
         self.running = running
+        self.devProcesses = devProcesses
     }
 
     public func execute(_ plan: CleanPlan, progress: @Sendable (String) -> Void = { _ in }) async -> Receipt {
@@ -15,10 +18,11 @@ public struct Executor: Sendable {
             ReceiptEntry(itemID: $0.item.id, title: $0.item.target.title, claimed: $0.item.bytes,
                          measured: 0, failures: [], skippedReason: $0.reason)
         }
+        let dev = plan.items.contains { $0.project != nil } ? devProcesses.snapshot() : nil
         for item in plan.items {
             progress(item.target.title)
-            // An app may have started since the plan was made.
-            if let reason = Planner.skipReason(item, running: running) {
+            // An app or dev server may have started since the plan was made.
+            if let reason = Planner.skipReason(item, running: running, dev: dev) {
                 entries.append(ReceiptEntry(itemID: item.id, title: item.target.title, claimed: item.bytes,
                                             measured: 0, failures: [], skippedReason: reason))
                 continue

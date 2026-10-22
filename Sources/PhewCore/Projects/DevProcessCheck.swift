@@ -78,7 +78,7 @@ private func commandLines(_ pids: [String]) -> [String: String] {
 private let devServerPatterns: [(pattern: String, name: String)] = [
     ("/next(\\.js)? (dev|start)", "next dev"), ("/vite(\\.js)?( |$)", "vite"), ("/nuxt (dev|start)", "nuxt dev"),
     ("/astro dev", "astro dev"), ("webpack(-dev-server| serve)", "webpack"), ("/expo start", "expo"),
-    ("react-native start|metro", "metro"), ("flutter (run|attach)", "flutter run"), ("GradleDaemon|gradlew? ", "Gradle"),
+    ("react-native start|metro", "metro"), ("flutter(_tools\\.snapshot)? (run|attach)", "flutter run"), ("GradleDaemon|gradlew? ", "Gradle"),
     ("artisan serve", "artisan serve"), ("php -S ", "php -S"), ("rails (s|server)( |$)", "rails server"),
     ("manage\\.py runserver", "runserver"), ("uvicorn|gunicorn|flask run", "python server"),
     ("(npm|pnpm|yarn|bun)( run)? (dev|start|serve)( |$)", "dev script"), ("deno (task|run) ", "deno"),

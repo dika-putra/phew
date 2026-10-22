@@ -33,8 +33,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         scheduler.start { [model] in await model.refresh() }
         if model.isStale { Task { await model.refresh() } }
         UNUserNotificationCenter.current().delegate = self
-        Notifier.requestPermission()
-        model.checkSpace()
+        // First check only after the permission answer, or the first alert is dropped while the
+        // alert state is already disarmed.
+        Notifier.requestPermission { [model] in Task { @MainActor in model.checkSpace() } }
         spaceTimer = Timer.scheduledTimer(withTimeInterval: 15 * 60, repeats: true) { [model] _ in
             Task { @MainActor in model.checkSpace() }
         }

@@ -91,7 +91,10 @@ struct SettingsView: View {
                     row("Extra folders") {
                         Text("\(config.validTargets.count)").foregroundStyle(.secondary)
                         Button("Open file") { NSWorkspace.shared.open(store.url) }.controlSize(.small)
-                        Button("Reload") { config = store.load() }.controlSize(.small)
+                        Button("Reload") {
+                            config = store.load()
+                            Task { await model.refresh() }
+                        }.controlSize(.small)
                     }
                     note("Folders Phew doesn't know yet, for example a tool's cache. Add them to customTargets in the config file.", .secondary)
                     ForEach(config.issues, id: \.message) { note($0.message, .red) }
@@ -138,6 +141,8 @@ struct SettingsView: View {
         do {
             try action()
             saveError = nil
+            // Roots, dormant days or extra folders changed: the cached scan is out of date.
+            Task { await model.refresh() }
         } catch {
             saveError = "Couldn't save settings: \(error.localizedDescription)"
         }

@@ -4,18 +4,20 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m4-menubar.md
 Branch: m4-menubar
-Next step: Final review of m4-menubar, then M5 plan
+Next step: Merge m4-menubar if the user agrees, then write the M5 plan (simulators, runtimes, dyld, Docker, version managers)
 
-## Carry into M4 (deferred from the M2 and M3 reviews)
+## Carry into M5 (deferred from the M2, M3 and M4 reviews)
 
-- TOCTOU between `PathGuard.check` and `removeItem` (same-user race). Remove relative to an opened parent handle if it matters.
+- TOCTOU between `PathGuard.check` and `removeItem` (same-user race).
 - Nested custom targets are counted twice; cleaning both gives a `missingParent` failure.
-- `CleanPlan.needsAdmin` is ignored by the CLI. Handle it before M5 adds admin targets.
-- `git ls-files` gets every candidate path as an argument; a huge Laravel views folder can exceed ARG_MAX (fails safe as "Couldn't check git status").
+- `CleanPlan.needsAdmin` is ignored by the CLI and the app. Handle it in M5 with the admin targets.
+- `git ls-files` gets every candidate path as an argument (ARG_MAX on huge Laravel views folders; fails safe).
 - Rust `target` is deleted directly; spec says `cargo clean` first (same result).
-- No running-process check for project artifacts (`next dev`, `vite`, `flutter run`). Add in M4.
-- The prune list also skips `bin obj deps _build .build .gradle .terraform`, beyond spec section 7; projects inside such folders are not found.
-- UI: monorepos produce many tiny items (8 KB `.turbo`); group or hide small ones in M4.
+- The prune list also skips `bin obj deps _build .build .gradle .terraform` beyond spec section 7.
+- App: refresh is not blocked during a clean (numbers only); a notification click mid-clean moves to Home.
+- App: alert text says "about Zero KB" when nothing is reclaimable; ConfirmView heading "Skipped, in use" also covers unreadable items.
+- App: `CLIInstaller` replaces any symlink at `~/.local/bin/phew`, also one pointing at a dev build; `SMAppService` `.requiresApproval` shows no message; Home shows a spinner for "No scan yet".
+- Dev server check: the Gradle daemon's cwd is `~/.gradle/daemon`, so it never matches a project.
 
 ## Log
 
@@ -58,3 +60,4 @@ Next step: Final review of m4-menubar, then M5 plan
 | 2026-10-21 | M4 | Task 6: group view, clean flow | Add group view and clean flow | dev server check narrowed (MCP servers gave false in-use); popover clean needs user check |
 | 2026-10-21 | M4 | Task 7: settings, About, alert | Add settings, About and low space alert | interactive checks moved to Task 8 with the user |
 | 2026-10-22 | M4 | Task 8: milestone check | Re-anchor the popover after resizing and share one checkbox style | user checked the app; UI changes from feedback: checkbox-only cleaning, Quick clean, Extra folders, folder icon, NSPopover |
+| 2026-10-22 | M4 | Final review fixes | Fix M4 review findings | 6 Important fixed; minors in Carry into M5 |

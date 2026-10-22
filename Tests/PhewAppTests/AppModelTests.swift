@@ -15,7 +15,7 @@ func appItem(_ id: String, bytes: Int64 = 10, tier: Tier = .regenerates, state: 
                               Receipt(entries: [], freeBefore: 0, freeAfter: 0) }) -> AppModel {
     AppModel(scan: scan, cache: cache, available: available, running: running, execute: execute,
              notify: { _ in }, alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) },
-             defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!)
+             defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!, reconcile: { $0 })
 }
 
 func tempCache() -> ScanCache {
@@ -171,4 +171,36 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     m.quickClean()
     guard case .confirm(let plan) = m.screen else { Issue.record("expected confirm"); return }
     #expect(plan.items.map(\.id) == ["a"])
+}
+
+@MainActor @Test func vanishedItemsLeaveSnapshot() async throws {
+    let m = try model(items: [appItem("a"), appItem("b")]) { plan, _ in
+        Receipt(entries: plan.items.map { ReceiptEntry(itemID: $0.id, title: "", claimed: $0.bytes, measured: 0,
+                                                       failures: [], skippedReason: nil) }, freeBefore: 0, freeAfter: 0)
+    }
+    m.selection = ["a"]
+    m.cleanSelected(in: "G")
+    m.confirm()
+    await m.waitForClean()
+    #expect(m.snapshot?.items.map(\.id) == ["b"])
+}
+
+@MainActor @Test func refreshKeepsUserUnchecks() async throws {
+    let cache = tempCache()
+    try cache.save(ScanSnapshot(date: .now, items: [appItem("a"), appItem("b")], skippedProjects: 0, unreadable: []))
+    let m = makeModel(scan: { ScanSnapshot(date: .now, items: [appItem("a"), appItem("b"), appItem("c")],
+                                           skippedProjects: 0, unreadable: []) }, cache: cache, available: { 1 })
+    m.toggle("a")
+    await m.refresh()
+    #expect(m.selection == ["b", "c"])
+}
+
+@MainActor @Test func cacheIsReconciledOnLoad() throws {
+    let cache = tempCache()
+    try cache.save(ScanSnapshot(date: .now, items: [appItem("a"), appItem("b")], skippedProjects: 0, unreadable: []))
+    let m = AppModel(scan: { fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
+                     alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) },
+                     defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!,
+                     reconcile: { snap in var s = snap; s.items.removeAll { $0.id == "a" }; return s })
+    #expect(m.snapshot?.items.map(\.id) == ["b"])
 }

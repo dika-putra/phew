@@ -1,8 +1,8 @@
 import UserNotifications
 
 enum Notifier {
-    static func requestPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    static func requestPermission(then done: @escaping @Sendable () -> Void) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in done() }
     }
 
     static func post(_ message: String) {

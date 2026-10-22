@@ -33,3 +33,26 @@ public struct ScanCache: Sendable {
         try JSONEncoder().encode(snapshot).write(to: url, options: .atomic)
     }
 }
+
+extension ScanSnapshot {
+    /// Brings a cached scan in line with the current catalog and config: targets are replaced by
+    /// their current definition (tier, paths), and items whose target or project folder is gone
+    /// are dropped. A cached copy must never decide what gets deleted with an old definition.
+    public func reconciled(targets: [PathTarget], projectRoots: [URL]) -> ScanSnapshot {
+        let byID = Dictionary(targets.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let roots = projectRoots.map { $0.standardizedFileURL.pathComponents }
+        var copy = self
+        copy.items = items.compactMap { item in
+            if let project = item.project {
+                let c = project.root.standardizedFileURL.pathComponents
+                return roots.contains { c.starts(with: $0) } ? item : nil
+            }
+            guard let target = byID[item.id] else { return nil }
+            var updated = Item(id: item.id, target: target, urls: item.urls, bytes: item.bytes,
+                               lastUsed: item.lastUsed, state: item.state)
+            updated.project = item.project
+            return updated
+        }
+        return copy
+    }
+}
