@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-21-m4-menubar.md
 Branch: m4-menubar
-Next step: Task 8: user check list (M4)
+Next step: Final review of m4-menubar, then M5 plan
 
 ## Carry into M4 (deferred from the M2 and M3 reviews)
 
@@ -57,3 +57,4 @@ Next step: Task 8: user check list (M4)
 | 2026-10-21 | M4 | Task 5: app target, Home | Add menu bar app with Home | make app; PHEW_SNAPSHOT renders screens; popover click needs user check |
 | 2026-10-21 | M4 | Task 6: group view, clean flow | Add group view and clean flow | dev server check narrowed (MCP servers gave false in-use); popover clean needs user check |
 | 2026-10-21 | M4 | Task 7: settings, About, alert | Add settings, About and low space alert | interactive checks moved to Task 8 with the user |
+| 2026-10-22 | M4 | Task 8: milestone check | Re-anchor the popover after resizing and share one checkbox style | user checked the app; UI changes from feedback: checkbox-only cleaning, Quick clean, Extra folders, folder icon, NSPopover |
