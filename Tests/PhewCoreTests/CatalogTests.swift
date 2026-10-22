@@ -59,3 +59,7 @@ private func target(_ id: String) -> PathTarget? { builtin.first { $0.id == id }
     #expect(all.last?.group == "Extra folders")
     #expect(all.last?.flags.isEmpty == true)
 }
+
+@Test func orbstackIsInDockerGroup() {
+    #expect(target("orbstack")?.group == "Docker")
+}

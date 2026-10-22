@@ -1,0 +1,5 @@
+// synthetic: docker system df --format {{.Type}}\t{{.Reclaimable}}
+Images	3.214GB (78%)
+Containers	12.5MB (100%)
+Local Volumes	1.1GB (40%)
+Build Cache	845.3MB

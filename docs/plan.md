@@ -171,7 +171,7 @@ Paths start at `~` unless absolute. Paths marked FDA need FDA (verify each durin
 | Go | go.buildcache | `Library/Caches/go-build` | regenerates |
 | Homebrew | brew | command `brew cleanup -s` and `Library/Caches/Homebrew` | redownload |
 | Editors | editors | cache subfolders of VS Code, Cursor, Windsurf, Devin, Zed; `Library/Caches/JetBrains`, `Library/Logs/JetBrains` | regenerates, skip that editor |
-| Containers | orbstack | `.orbstack/log`, `Library/Caches/dev.kdrag0n.MacVirt` | regenerates |
+| Docker | orbstack | `.orbstack/log`, `Library/Caches/dev.kdrag0n.MacVirt` | regenerates |
 
 ### Custom targets (code)
 

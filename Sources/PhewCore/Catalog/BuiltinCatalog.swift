@@ -112,8 +112,8 @@ public enum BuiltinCatalog {
                    paths: ["~/Library/Caches/JetBrains", "~/Library/Logs/JetBrains"],
                    skipIfRunning: ["proc:JetBrains IDE=/Contents/MacOS/(idea|webstorm|pycharm|goland|phpstorm|rider|clion|rubymine)"]),
 
-        // Containers
-        PathTarget(id: "orbstack", group: "Containers", title: "OrbStack logs and cache", tier: .regenerates,
+        // Docker
+        PathTarget(id: "orbstack", group: "Docker", title: "OrbStack logs and cache", tier: .regenerates,
                    paths: ["~/.orbstack/log", "~/Library/Caches/dev.kdrag0n.MacVirt"],
                    skipIfRunning: ["dev.kdrag0n.MacVirt"]), // unverified bundle id
     ]
