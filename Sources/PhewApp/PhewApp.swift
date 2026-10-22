@@ -66,9 +66,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     private func setUpStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "wind", accessibilityDescription: "Phew")
+        item.button?.image = StatusIcon.image()
         item.button?.target = self
-        item.button?.action = #selector(togglePopover)
+        item.button?.action = #selector(statusButtonClicked)
+        item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         statusItem = item
 
         // The popover size is set by hand and the popover is re-anchored to the icon after each
@@ -85,7 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             }
         popover.contentViewController = NSHostingController(rootView: content)
         popover.behavior = .transient
-        popover.animates = false
+        popover.animates = true
     }
 
     private func resizePopover(to size: CGSize) {
@@ -96,8 +97,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
     }
 
-    @objc private func togglePopover() {
-        if popover.isShown { popover.performClose(nil) } else { showPopover() }
+    /// Left click toggles the popover; right click or control-click shows the menu.
+    @objc private func statusButtonClicked() {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            showMenu()
+        } else if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            showPopover()
+        }
+    }
+
+    private func showMenu() {
+        guard let item = statusItem, let button = item.button else { return }
+        popover.performClose(nil)
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Open Phew", action: #selector(openFromMenu), keyEquivalent: "").target = self
+        let refresh = menu.addItem(withTitle: "Refresh", action: #selector(refreshFromMenu), keyEquivalent: "")
+        refresh.target = self
+        refresh.isEnabled = !model.isScanning && !model.isCleaning
+        let settings = menu.addItem(withTitle: "Settings…", action: #selector(settingsFromMenu), keyEquivalent: ",")
+        settings.target = self
+        settings.isEnabled = !model.isCleaning
+        menu.addItem(.separator())
+        menu.addItem(withTitle: model.isCleaning ? "Quit Phew (stops the clean)" : "Quit Phew",
+                     action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.autoenablesItems = false
+        // A status item shows its menu on click only while `menu` is set, so set it for this click.
+        item.menu = menu
+        button.performClick(nil)
+        item.menu = nil
+    }
+
+    @objc private func openFromMenu() { showPopover() }
+
+    @objc private func refreshFromMenu() { Task { await model.refresh() } }
+
+    @objc private func settingsFromMenu() {
+        model.screen = .settings
+        showPopover()
     }
 
     func showPopover() {
@@ -134,7 +173,19 @@ struct ContentView: View {
     @Bindable var model: AppModel
 
     var body: some View {
-        screen
+        screen.background {
+            // ⌘, and ⌘Q work on every screen, like in other Mac apps (an accessory app has no
+            // main menu to carry them). Settings does not open while a clean is running.
+            Group {
+                Button("Settings") { if !model.isCleaning { model.screen = .settings } }
+                    .keyboardShortcut(",")
+                Button("Quit") { NSApp.terminate(nil) }
+                    .keyboardShortcut("q")
+            }
+            .opacity(0)
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder private var screen: some View {

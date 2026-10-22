@@ -36,21 +36,21 @@ struct SettingsView: View {
                             Button("Add…") { addRoot() }.controlSize(.small)
                         }
                         if config.config.projectRoots.isEmpty {
-                            Text("None yet. Add the folder that holds your projects.").font(.caption).foregroundStyle(.secondary)
+                            Text("None yet. Add the folder that holds your projects.").font(.subheadline).foregroundStyle(.secondary)
                         }
                         ForEach(config.config.projectRoots, id: \.self) { root in
                             HStack {
-                                Text(root).font(.caption).lineLimit(1).truncationMode(.middle)
+                                Text(root).font(.subheadline).lineLimit(1).truncationMode(.middle)
                                 Spacer()
-                                Button { change { try store.removeProjectRoot(URL(fileURLWithPath: root)) } } label: {
-                                    Image(systemName: "minus.circle")
+                                IconButton(systemName: "minus.circle", label: "Remove \(root)") {
+                                    change { try store.removeProjectRoot(URL(fileURLWithPath: root)) }
                                 }
-                                .buttonStyle(.borderless)
-                                .accessibilityLabel("Remove \(root)")
                             }
                         }
                     }
                     .padding(.horizontal, 12).padding(.vertical, 8)
+                    Divider()
+                    keptItems
                     Divider()
                     row("Dormant after") {
                         Stepper("\(config.config.dormantDays) days", value: Binding(
@@ -70,10 +70,10 @@ struct SettingsView: View {
                     row("Launch at login") {
                         Toggle("", isOn: Binding(get: { launchAtLogin }, set: { setLaunchAtLogin($0) })).labelsHidden()
                     }
-                    if let loginError { note(loginError, .red) }
+                    if let loginError { note(loginError, Palette.red) }
                     row("Full Disk Access") {
                         let granted = FullDiskAccess.isGranted
-                        Badge(text: granted ? "Granted" : "Not granted", color: granted ? .green : .orange)
+                        Badge(text: granted ? "Granted" : "Not granted", color: granted ? Palette.green : Palette.orange)
                         Button("Open settings") { FullDiskAccess.openSettings() }.controlSize(.small)
                     }
                     row("Command line tool") {
@@ -89,26 +89,48 @@ struct SettingsView: View {
                         }.controlSize(.small)
                     }
                     note("Folders Phew doesn't know yet, for example a tool's cache. Add them to customTargets in the config file.", .secondary)
-                    ForEach(config.issues, id: \.message) { note($0.message, .red) }
-                    if let saveError { note(saveError, .red) }
+                    ForEach(config.issues, id: \.message) { note($0.message, Palette.red) }
+                    if let saveError { note(saveError, Palette.red) }
                     about
                 }
             }
         }
     }
 
+    private var keptItems: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Kept items")
+            if model.kept.isEmpty {
+                Text("None. Untick an item to keep it out of Quick clean.").font(.subheadline).foregroundStyle(.secondary)
+            } else {
+                Text("Unticked items Quick clean leaves alone.").font(.subheadline).foregroundStyle(.secondary)
+            }
+            ForEach(model.kept.sorted(), id: \.self) { id in
+                HStack {
+                    Text(model.keptTitle(id)).font(.subheadline).lineLimit(1).truncationMode(.middle)
+                    Spacer()
+                    IconButton(systemName: "minus.circle", label: "Clean again with Quick clean") { model.unkeep(id) }
+                }
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+    }
+
     private var about: some View {
         VStack(spacing: 4) {
             Text("Phew \(AppInfo.version) (1)").fontWeight(.semibold)
-            Text("by \(AppInfo.author)").font(.caption).foregroundStyle(.secondary)
-            HStack(spacing: 14) {
+            Text("by \(AppInfo.author)").font(.subheadline).foregroundStyle(.secondary)
+            HStack(spacing: 16) {
                 Link("View on GitHub", destination: AppInfo.repoURL)
                 Link("Report an issue", destination: AppInfo.repoURL.appending(path: "issues"))
             }
-            .font(.caption)
+            .font(.subheadline)
+            Button("Quit Phew") { NSApp.terminate(nil) }
+                .help("Quit Phew (⌘Q)")
+                .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
-        .padding(14)
+        .padding(16)
     }
 
     private func row<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
@@ -124,8 +146,8 @@ struct SettingsView: View {
     }
 
     private func note(_ text: String, _ color: Color) -> some View {
-        Text(text).font(.caption).foregroundStyle(color)
-            .padding(.horizontal, 12).padding(.bottom, 6)
+        Text(text).font(.subheadline).foregroundStyle(color)
+            .padding(.horizontal, 12).padding(.bottom, 8)
             .textSelection(.enabled)
     }
 

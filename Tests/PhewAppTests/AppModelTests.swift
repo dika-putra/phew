@@ -9,13 +9,14 @@ func appItem(_ id: String, bytes: Int64 = 10, tier: Tier = .regenerates, state: 
 }
 
 /// AppModel with no real notifications, config or UserDefaults.
-@MainActor func makeModel(scan: @escaping @Sendable () async -> ScanSnapshot, cache: ScanCache,
+@MainActor func makeModel(scan: @escaping @Sendable (@escaping @Sendable (String) -> Void) async -> ScanSnapshot, cache: ScanCache,
                           available: @escaping @Sendable () -> Int64, running: RunningCheck = .live,
                           execute: @escaping @Sendable (CleanPlan, @escaping @Sendable (String) -> Void) async -> Receipt = { _, _ in
-                              Receipt(entries: [], freeBefore: 0, freeAfter: 0) }) -> AppModel {
+                              Receipt(entries: [], freeBefore: 0, freeAfter: 0) },
+                          defaults: UserDefaults = UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!) -> AppModel {
     AppModel(scan: scan, cache: cache, available: available, running: running, execute: execute,
              notify: { _ in }, alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) },
-             defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!, reconcile: { $0 })
+             defaults: defaults, reconcile: { $0 })
 }
 
 func tempCache() -> ScanCache {
@@ -25,14 +26,14 @@ func tempCache() -> ScanCache {
 @MainActor @Test func loadsCacheOnInit() throws {
     let cache = tempCache()
     try cache.save(ScanSnapshot(date: .now, items: [appItem("a")], skippedProjects: 0, unreadable: []))
-    let model = makeModel(scan: { fatalError("no scan") }, cache: cache, available: { 1 })
+    let model = makeModel(scan: { _ in fatalError("no scan") }, cache: cache, available: { 1 })
     #expect(model.snapshot?.items.map(\.id) == ["a"])
 }
 
 @MainActor @Test func refreshSavesCacheAndPreselects() async {
     let cache = tempCache()
     let items = [appItem("a"), appItem("b", tier: .dataLoss)]
-    let model = makeModel(scan: { ScanSnapshot(date: .now, items: items, skippedProjects: 0, unreadable: []) },
+    let model = makeModel(scan: { _ in ScanSnapshot(date: .now, items: items, skippedProjects: 0, unreadable: []) },
                          cache: cache, available: { 5 })
     await model.refresh()
     #expect(cache.load()?.items.count == 2)
@@ -50,7 +51,7 @@ actor Gate {
 
 @MainActor @Test func refreshIgnoredWhileScanning() async throws {
     let gate = Gate()
-    let model = makeModel(scan: {
+    let model = makeModel(scan: { _ in
         await gate.enter()
         return ScanSnapshot(date: .now, items: [], skippedProjects: 0, unreadable: [])
     }, cache: tempCache(), available: { 1 })
@@ -70,7 +71,7 @@ private let quiet = RunningCheck(runningBundleIDs: { [:] }, processMatches: { _ 
                               execute: @escaping @Sendable (CleanPlan, @escaping @Sendable (String) -> Void) async -> Receipt) throws -> AppModel {
     let cache = tempCache()
     try cache.save(ScanSnapshot(date: .now, items: items, skippedProjects: 0, unreadable: []))
-    return makeModel(scan: { fatalError("no scan") }, cache: cache, available: { 1 }, running: running, execute: execute)
+    return makeModel(scan: { _ in fatalError("no scan") }, cache: cache, available: { 1 }, running: running, execute: execute)
 }
 
 private func receipt(for plan: CleanPlan) -> Receipt {
@@ -129,7 +130,7 @@ private func receipt(for plan: CleanPlan) -> Receipt {
 
 @MainActor @Test func inUseItemsAreNotPreselected() async {
     let busy = appItem("busy", state: .inUse(app: "Gradle"))
-    let m = makeModel(scan: { ScanSnapshot(date: .now, items: [appItem("a"), busy], skippedProjects: 0, unreadable: []) },
+    let m = makeModel(scan: { _ in ScanSnapshot(date: .now, items: [appItem("a"), busy], skippedProjects: 0, unreadable: []) },
                      cache: tempCache(), available: { 1 })
     await m.refresh()
     #expect(m.selection == ["a"])
@@ -188,7 +189,7 @@ private func receipt(for plan: CleanPlan) -> Receipt {
 @MainActor @Test func refreshKeepsUserUnchecks() async throws {
     let cache = tempCache()
     try cache.save(ScanSnapshot(date: .now, items: [appItem("a"), appItem("b")], skippedProjects: 0, unreadable: []))
-    let m = makeModel(scan: { ScanSnapshot(date: .now, items: [appItem("a"), appItem("b"), appItem("c")],
+    let m = makeModel(scan: { _ in ScanSnapshot(date: .now, items: [appItem("a"), appItem("b"), appItem("c")],
                                            skippedProjects: 0, unreadable: []) }, cache: cache, available: { 1 })
     m.toggle("a")
     await m.refresh()
@@ -198,7 +199,7 @@ private func receipt(for plan: CleanPlan) -> Receipt {
 @MainActor @Test func cacheIsReconciledOnLoad() throws {
     let cache = tempCache()
     try cache.save(ScanSnapshot(date: .now, items: [appItem("a"), appItem("b")], skippedProjects: 0, unreadable: []))
-    let m = AppModel(scan: { fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
+    let m = AppModel(scan: { _ in fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
                      alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) },
                      defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!,
                      reconcile: { snap in var s = snap; s.items.removeAll { $0.id == "a" }; return s })
@@ -210,7 +211,7 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     let cache = tempCache()
     try cache.save(ScanSnapshot(date: .now, items: [appItem("a")], skippedProjects: 0, unreadable: []))
     let scans = Spy()
-    let m = makeModel(scan: { scans.messages.append("scan"); return ScanSnapshot(date: .now, items: [], skippedProjects: 0, unreadable: []) },
+    let m = makeModel(scan: { _ in scans.messages.append("scan"); return ScanSnapshot(date: .now, items: [], skippedProjects: 0, unreadable: []) },
                       cache: cache, available: { 1 }, execute: { plan, _ in
                           await gate.enter()
                           return Receipt(entries: [], freeBefore: 0, freeAfter: 0)
@@ -227,7 +228,7 @@ private func receipt(for plan: CleanPlan) -> Receipt {
 
 @MainActor @Test func alertWithoutReclaimable() throws {
     let spy = Spy()
-    let m = AppModel(scan: { fatalError() }, cache: tempCache(), available: { 10_000_000_000 },
+    let m = AppModel(scan: { _ in fatalError() }, cache: tempCache(), available: { 10_000_000_000 },
                      notify: { spy.messages.append($0) }, alertSettings: { LowSpaceAlert(enabled: true, thresholdGB: 20) },
                      defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!, reconcile: { $0 })
     m.checkSpace()
@@ -241,7 +242,7 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     let docker = Item(id: "docker.buildcache", target: PathTarget(id: "docker.buildcache", group: "Docker", title: "B",
                                                                    tier: .regenerates, paths: []),
                       urls: [], bytes: 5, lastUsed: nil, state: .ready)
-    let m = AppModel(scan: { fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
+    let m = AppModel(scan: { _ in fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
                      alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) },
                      defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!, reconcile: { $0 },
                      openDocker: { calls.messages.append("open") },
@@ -269,4 +270,153 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     let kept = try #require(m.snapshot?.items.first)
     #expect(kept.bytes == 60)
     #expect(kept.removal == tool.removal && kept.measure == .docker && kept.note == "Used by web")
+}
+
+// M5.5
+
+private func sized(_ id: String, _ bytes: Int64, state: ItemState = .ready) -> Item { appItem(id, bytes: bytes, state: state) }
+
+@MainActor @Test func groupItemsSortedBySize() throws {
+    let m = try model(items: [sized("s", 1), sized("l", 30), sized("m", 20)]) { plan, _ in receipt(for: plan) }
+    #expect(m.items(in: "G").map(\.id) == ["l", "m", "s"])
+}
+
+@MainActor @Test func toggleAllSkipsLockedAndUnreadable() throws {
+    let items = [sized("a", 1), sized("b", 1, state: .locked("default")), sized("c", 1, state: .unreadable)]
+    let m = try model(items: items) { plan, _ in receipt(for: plan) }
+    m.selection = []
+    m.toggleAll(m.items(in: "G"))
+    #expect(m.selection == ["a"])
+    #expect(m.selectionState(m.items(in: "G")) == .on)
+    m.toggleAll(m.items(in: "G"))
+    #expect(m.selection.isEmpty)
+}
+
+@MainActor @Test func selectionStateOfUnselectableGroupIsOff() throws {
+    let m = try model(items: [sized("b", 1, state: .locked("default"))]) { plan, _ in receipt(for: plan) }
+    #expect(m.selectionState(m.items(in: "G")) == .off)
+}
+
+@MainActor @Test func selectionStateMixed() throws {
+    let m = try model(items: [sized("a", 1), sized("b", 1)]) { plan, _ in receipt(for: plan) }
+    m.selection = ["a"]
+    #expect(m.selectionState(m.items(in: "G")) == .mixed)
+}
+
+@MainActor @Test func untickingPreselectedItemKeepsIt() async {
+    let defaults = UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!
+    let scan: @Sendable (@escaping @Sendable (String) -> Void) async -> ScanSnapshot = { _ in
+        ScanSnapshot(date: .now, items: [appItem("a")], skippedProjects: 0, unreadable: [])
+    }
+    let m = makeModel(scan: scan, cache: tempCache(), available: { 1 }, defaults: defaults)
+    await m.refresh()
+    m.toggle("a")
+    #expect(m.kept == ["a"])
+    let again = makeModel(scan: scan, cache: tempCache(), available: { 1 }, defaults: defaults)
+    await again.refresh()
+    #expect(again.selection.isEmpty)
+    #expect(again.summary.reclaimable == 0)
+    again.toggle("a")
+    #expect(again.kept.isEmpty)
+}
+
+@MainActor @Test func keptSurvivesItemDisappearing() async {
+    let present = Spy()
+    present.messages = ["a"]
+    let m = makeModel(scan: { _ in
+        ScanSnapshot(date: .now, items: present.messages.map { appItem($0) }, skippedProjects: 0, unreadable: [])
+    }, cache: tempCache(), available: { 1 })
+    await m.refresh()
+    m.toggle("a")
+    present.messages = []
+    await m.refresh()
+    present.messages = ["a"]
+    await m.refresh()
+    #expect(m.selection.isEmpty)
+}
+
+@MainActor @Test func keptTitleFallsBackToID() throws {
+    let m = try model(items: [appItem("a")]) { plan, _ in receipt(for: plan) }
+    #expect(m.keptTitle("a") == "A")
+    #expect(m.keptTitle("gone") == "gone")
+}
+
+@MainActor @Test func lastCleanRecordedAfterClean() async throws {
+    let defaults = UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!
+    let cache = tempCache()
+    try cache.save(ScanSnapshot(date: .now, items: [appItem("a", bytes: 40)], skippedProjects: 0, unreadable: []))
+    let m = makeModel(scan: { _ in fatalError() }, cache: cache, available: { 1 },
+                      execute: { plan, _ in receipt(for: plan) }, defaults: defaults)
+    m.selection = ["a"]
+    m.cleanSelected(in: "G")
+    m.confirm()
+    await m.waitForClean()
+    #expect(m.lastClean?.freed == 40)
+    let again = makeModel(scan: { _ in fatalError() }, cache: tempCache(), available: { 1 }, defaults: defaults)
+    #expect(again.lastClean?.freed == 40)
+}
+
+@MainActor @Test func lastCleanNotRecordedWhenNothingFreed() async throws {
+    let m = try model(items: [appItem("a")]) { _, _ in Receipt(entries: [], freeBefore: 0, freeAfter: 0) }
+    m.selection = ["a"]
+    m.cleanSelected(in: "G")
+    m.confirm()
+    await m.waitForClean()
+    #expect(m.lastClean == nil)
+}
+
+@MainActor @Test func scanStageShownWhileScanning() async {
+    let gate = Gate()
+    let m = makeModel(scan: { progress in
+        progress("Project folders")
+        await gate.enter()
+        return ScanSnapshot(date: .now, items: [], skippedProjects: 0, unreadable: [])
+    }, cache: tempCache(), available: { 1 })
+    let task = Task { await m.refresh() }
+    while await gate.calls == 0 { await Task.yield() }
+    // The stage is set on the main actor; let that hop run.
+    for _ in 0..<10 where m.scanStage == nil { await Task.yield() }
+    #expect(m.scanStage == "Project folders")
+    await gate.open()
+    await task.value
+    #expect(m.scanStage == nil)
+}
+
+// M5.5 review fixes
+
+@MainActor @Test func itemTurningReadyIsSelected() async {
+    let busy = Spy()
+    busy.messages = ["busy"]
+    let m = makeModel(scan: { _ in
+        ScanSnapshot(date: .now, items: [appItem("a", state: busy.messages.isEmpty ? .ready : .inUse(app: "Gradle"))],
+                     skippedProjects: 0, unreadable: [])
+    }, cache: tempCache(), available: { 1 })
+    await m.refresh()
+    #expect(m.selection.isEmpty)
+    busy.messages = []
+    await m.refresh()
+    #expect(m.selection == ["a"])
+    #expect(m.summary.quickClean.map(\.id) == ["a"])
+}
+
+@MainActor @Test func clearingGroupKeepsItsPreselectedItems() throws {
+    let m = try model(items: [appItem("a"), appItem("b", tier: .dataLoss)]) { plan, _ in receipt(for: plan) }
+    m.selection = ["a", "b"]
+    m.toggleAll(m.items(in: "G"))
+    #expect(m.kept == ["a"])
+}
+
+@MainActor @Test func startDockerRespectsKept() async throws {
+    let cache = tempCache()
+    let docker = Item(id: "docker.buildcache", target: PathTarget(id: "docker.buildcache", group: "Docker", title: "B",
+                                                                   tier: .regenerates, paths: []),
+                      urls: [], bytes: 5, lastUsed: nil, state: .ready)
+    try cache.save(ScanSnapshot(date: .now, items: [docker], skippedProjects: 0, unreadable: []))
+    let defaults = UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!
+    defaults.set(["docker.buildcache"], forKey: "keptItems")
+    let m = AppModel(scan: { _ in fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
+                     alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) }, defaults: defaults,
+                     reconcile: { $0 }, openDocker: {}, dockerScan: { .running([docker]) }, dockerPoll: .milliseconds(1))
+    await m.startDocker()
+    #expect(m.selection.isEmpty)
 }

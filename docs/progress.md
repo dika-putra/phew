@@ -6,6 +6,30 @@ Current plan: docs/superpowers/plans/2026-10-22-m6-release.md
 Branch: m6-release
 Next step: Task 1, Step 1 (M6)
 
+## M5.5 decisions (UI review, 2026-10-22)
+
+1. Right-click status item menu: Open, Refresh, Settings…, Quit (⌘Q); Quit button in Settings.
+2. Settings stays in the popover; ⌘, opens it.
+3. Return = Clean except when the plan has data-loss items; Esc = Cancel.
+4. Item rows on two lines, size right-aligned.
+5. Items sorted by size inside a group.
+6. Tri-state checkbox in each group header.
+7. Hover highlight on rows.
+8. Unticked preselected items are kept ("Kept items" in Settings); Quick clean leaves them out.
+9. Badge text contrast at least 4.5:1 (darker light-mode shades).
+10. Icon buttons have 28x28 pt hit areas.
+11. Information text at 11 pt (subheadline); badges 10 pt.
+12. Spacing scale 4/8/12/16/24.
+13. Popover resize animation back on (revert if it jumps).
+14. Scan stage text while scanning.
+15. "Last clean: X freed, Y ago" on Home.
+16. English only.
+17. Free space text next to the menu bar icon: deferred.
+18. Logo concept I (prompt with a breathing cursor): app icon #1E2229 with #7CF5C8 lines.
+19. Menu bar icon: template, chevron and curl only (replaces SF Symbol wind).
+20. README banner 1280x320, light and dark: icon, "phew" in monospace, one-line tagline.
+21. README Uninstall section (written in M6 Task 2).
+
 ## Carry into M6 (deferred from the M2 to M5 reviews)
 
 - TOCTOU between `PathGuard.check` and `removeItem` (same-user race).
@@ -20,6 +44,12 @@ Next step: Task 1, Step 1 (M6)
 - nvm from Homebrew, or nvm with no default alias, locks every version; `NVM_DIR`, `RUSTUP_HOME`, `CARGO_HOME` are read from the GUI environment only.
 - "Used by" misses `.nvmrc` aliases (`lts/*`) and rust pins like `1.79` against `1.79.0-…`.
 - The osascript admin prompt is killed after 600 s.
+
+- README (M6 Task 2): open with `<picture>` using `docs/banner-dark.png` and `docs/banner-light.png` (2560x640, show at width 640).
+- README "Uninstall": quit Phew, turn off Launch at login in Settings, delete `/Applications/Phew.app`, `rm ~/.local/bin/phew` (if installed from Settings), `rm -rf ~/.config/phew ~/Library/Caches/com.dikaputra.phew`, `defaults delete com.dikaputra.phew`.
+
+- Scan stage label: a late stage update from one scan can show briefly during the next (cosmetic; fix with a scan counter if seen).
+- Clearing a group checkbox keeps all its preselected items out of Quick clean (by design, pinned by a test); watch for user confusion.
 
 ## Log
 
@@ -77,3 +107,11 @@ Next step: Task 1, Step 1 (M6)
 | 2026-10-22 | M5 | Task 8: milestone check | Read the fvm global next to its versions folder | user checked Versions and Start Docker; nvm use detection added |
 | 2026-10-22 | M5 | Final review fixes | Fix M5 review findings | 1 Critical + 4 Important fixed; minors in Carry into M6 |
 | 2026-10-22 | M6 | Task 0: plan | Add M6 plan | m5-tools merged to main |
+| 2026-10-22 | M5.5 | Task 0: plan | Add M5.5 plan | UI review decisions recorded; logo concept I chosen |
+| 2026-10-22 | M5.5 | Task 1: model | Add kept items, last clean, scan stage and group selection | kept items in UserDefaults (app only); locked items no longer selectable via project checkbox |
+| 2026-10-22 | M5.5 | Task 2: views | Follow HIG sizes and add two-line rows | snapshots checked; Home tier badges stack when they don't fit one line; checkbox is a 28 pt target too |
+| 2026-10-22 | M5.5 | Task 3: logo | Add Phew logo | user ok; make icons regenerates icns and banners |
+| 2026-10-22 | M5.5 | Task 4: AppKit + user check | Add status item menu and shortcuts | user checked all 14 points ok; popover animation kept on; ⌘Q moved to the popover root |
+| 2026-10-22 | M5.5 | Task 5: spec, carry notes | Describe M5.5 UI changes in the spec | README banner and Uninstall carried into M6 |
+| 2026-10-22 | M5.5 | Final review fixes | Select items that become ready on refresh | 0 Critical, 1 Important fixed with test; minors tested or carried |
+| 2026-10-22 | M6 | Merge main | Merge branch 'main' into m6-release | brings M5.5 (UI polish, logo) into the M6 branch |
