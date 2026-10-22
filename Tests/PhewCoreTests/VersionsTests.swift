@@ -73,3 +73,25 @@ func realVersions() async {
     let items = await Versions.items(home: FileManager.default.homeDirectoryForCurrentUser, pins: PinFinder.find(roots: roots))
     for i in items { print("REAL \(i.id) \(i.bytes / 1_000_000) MB \(i.state) \(i.note ?? "")") }
 }
+
+@Test func versionsSkipWhenAProcessUsesThem() async throws {
+    try await withTempDirAsync { home in
+        try dirs(home, [".nvm/versions/node/v16.20.2"])
+        let items = await Versions.items(home: home, pins: Pins(), run: stub(["nvm version default": "v24.1.0\n"]))
+        let v16 = try #require(items.first)
+        let bin = home.appending(path: ".nvm/versions/node/v16.20.2/bin").path
+        #expect(v16.target.skipIfRunning == ["env:\(bin)"])
+        let running = RunningCheck(runningBundleIDs: { [:] }, processMatches: { _ in false },
+                                   environmentMatches: { $0 == bin ? "zsh" : nil })
+        #expect(Planner.plan([v16], running: running).skipped.first?.reason == "zsh is running. Quit zsh to clean Node v16.20.2.")
+    }
+}
+
+@Test func versionInUseAtScan() async throws {
+    try await withTempDirAsync { home in
+        try dirs(home, [".nvm/versions/node/v16.20.2"])
+        let running = RunningCheck(runningBundleIDs: { [:] }, processMatches: { _ in false }, environmentMatches: { _ in "zsh" })
+        let items = await Versions.items(home: home, pins: Pins(), run: stub(["nvm version default": "v24.1.0\n"]), running: running)
+        #expect(items.first?.state == .inUse(app: "zsh"))
+    }
+}

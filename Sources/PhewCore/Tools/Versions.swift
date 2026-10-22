@@ -4,11 +4,21 @@ import Foundation
 /// table output changes between releases). Removal uses each tool's own command so its
 /// metadata stays right. Active and default versions are locked.
 public enum Versions {
-    public static func items(home: URL, pins: Pins, run: @Sendable ([String]) async -> ShellResult? = liveRun) async -> [Item] {
+    public static func items(home: URL, pins: Pins, run: @Sendable ([String]) async -> ShellResult? = liveRun,
+                             running: RunningCheck = .live) async -> [Item] {
         async let flutter = fvm(home: home, pins: pins, run: run)
         async let node = nvm(home: home, pins: pins, run: run)
         async let rust = rustup(home: home, pins: pins, run: run)
-        return await flutter + node + rust
+        // Show "in use" in the list already; the planner checks again before removing.
+        return await (flutter + node + rust).map { item in
+            guard item.state == .ready, let app = running.firstRunning(item.target.skipIfRunning) else { return item }
+            var updated = Item(id: item.id, target: item.target, urls: item.urls, bytes: item.bytes,
+                               lastUsed: item.lastUsed, state: .inUse(app: app))
+            updated.removal = item.removal
+            updated.note = item.note
+            updated.preselected = false
+            return updated
+        }
     }
 
     private static func fvm(home: URL, pins: Pins, run: @Sendable ([String]) async -> ShellResult?) async -> [Item] {
@@ -71,11 +81,17 @@ public enum Versions {
     private static func versionFolders(_ folder: URL) -> [URL] {
         ((try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isDirectoryKey])) ?? [])
             .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true && !$0.lastPathComponent.hasPrefix(".") }
+            // Rebuild from `folder`: contentsOfDirectory can add /private, while PATH entries keep
+            // the path as the shell wrote it ($HOME/.nvm/...), and the in-use check compares text.
+            .map { folder.appending(path: $0.lastPathComponent) }
             .sorted { $0.lastPathComponent.compare($1.lastPathComponent, options: .numeric) == .orderedDescending }
     }
 
     private static func item(id: String, title: String, dir: URL, state: ItemState, users: Set<URL>, steps: [Step]) -> Item {
-        let target = PathTarget(id: id, group: "Versions", title: title, tier: .redownload, flags: [.heavy], paths: [dir.path])
+        // A terminal after `nvm use` (or a running flutter, cargo, node) has this bin folder on
+        // PATH or runs from it: the version is in use there. Rechecked when planning and cleaning.
+        let target = PathTarget(id: id, group: "Versions", title: title, tier: .redownload, flags: [.heavy], paths: [dir.path],
+                                skipIfRunning: ["env:\(dir.appending(path: "bin").path)"])
         var item = Item(id: id, target: target, urls: [dir], bytes: DiskSize.allocated(dir).bytes, lastUsed: nil, state: state)
         item.removal = .steps(steps)
         if !users.isEmpty {

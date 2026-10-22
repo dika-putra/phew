@@ -31,3 +31,22 @@ private func stub(apps: [String: String] = [:], procs: Set<String> = []) -> Runn
     #expect(RunningCheck.live.firstRunning(["proc:Sleeper=sleep 31\\.4159"]) == "Sleeper")
     #expect(RunningCheck.live.firstRunning(["proc:sleep 27\\.1828"]) == nil)
 }
+
+@Test func findsProcessByEnvironment() {
+    let check = RunningCheck(runningBundleIDs: { [:] }, processMatches: { _ in false },
+                             environmentMatches: { $0 == "/n/v16/bin" ? "zsh" : nil })
+    #expect(check.firstRunning(["env:/n/v16/bin"]) == "zsh")
+    #expect(check.firstRunning(["env:/n/v24/bin"]) == nil)
+}
+
+@Test func liveFindsOwnPathEntry() throws {
+    // This test process inherits PATH, so its own PATH entries are found (Phew excludes its own pid, tests don't).
+    let entry = try #require(ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":").first.map(String.init))
+    #expect(RunningCheck.live.firstRunning(["env:\(entry)"]) != nil)
+}
+
+@Test func processNameUsesAppBundle() {
+    #expect(processDisplayName("/Applications/Claude.app/Contents/Helpers/disclaimer") == "Claude")
+    #expect(processDisplayName("/bin/zsh") == "zsh")
+    #expect(processDisplayName("-zsh") == "zsh")
+}

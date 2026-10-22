@@ -71,3 +71,4 @@ Next step: Task 8: user check (M5)
 | 2026-10-22 | M5 | Task 5: simulators, runtimes, dyld | Add simulators, runtimes and dyld cache | synthetic simctl fixtures; admin via osascript (app) and sudo (CLI) |
 | 2026-10-22 | M5 | Task 6: version managers | Add fvm, nvm and rustup versions |  |
 | 2026-10-22 | M5 | Task 7: wiring and minors | Show tool items in the CLI and the app | phew versions; Docker off row with Start Docker; carried M4 minors fixed |
+| 2026-10-22 | M5 | Task 8 fix: version in use | Treat a version as in use when a process has it on PATH | nvm use in a terminal now blocks removing that version |
