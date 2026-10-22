@@ -30,7 +30,7 @@ run-app: app
 icons:
 	swift scripts/make-icons.swift
 
-# Universal (arm64 + x86_64) app with the CLI inside, zipped with a SHA-256 next to it.
+# Universal (arm64 + x86_64) app with the CLI inside, as a zip and a dmg, each with a SHA-256.
 DIST := dist
 REL := .build/out/Products/Release
 release:
@@ -44,3 +44,9 @@ release:
 	codesign --force --deep --sign - $(DIST)/Phew.app
 	cd $(DIST) && ditto -c -k --keepParent Phew.app Phew-$(VERSION).zip
 	cd $(DIST) && shasum -a 256 Phew-$(VERSION).zip > Phew-$(VERSION).zip.sha256
+	mkdir -p $(DIST)/dmg
+	cp -R $(DIST)/Phew.app $(DIST)/dmg/
+	ln -s /Applications $(DIST)/dmg/Applications
+	hdiutil create -volname "Phew $(VERSION)" -srcfolder $(DIST)/dmg -format UDZO -ov $(DIST)/Phew-$(VERSION).dmg
+	rm -rf $(DIST)/dmg
+	cd $(DIST) && shasum -a 256 Phew-$(VERSION).dmg > Phew-$(VERSION).dmg.sha256

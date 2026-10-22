@@ -11,12 +11,12 @@ Screenshots coming.
 
 ## Install
 
-1. Download `Phew-<version>.zip` and `Phew-<version>.zip.sha256` from [Releases](https://github.com/dika-putra/phew/releases).
+1. Download `Phew-<version>.dmg` (or `.zip`) and its `.sha256` file from [Releases](https://github.com/dika-putra/phew/releases).
 2. Check the download:
    ```bash
-   shasum -a 256 -c Phew-<version>.zip.sha256
+   shasum -a 256 -c Phew-<version>.dmg.sha256
    ```
-3. Unzip it and move `Phew.app` to `/Applications`.
+3. Open the dmg and drag Phew to Applications. With the zip: unzip it and move `Phew.app` to `/Applications`.
 4. Remove the quarantine flag. Phew is not signed with an Apple Developer ID, so macOS blocks it on first open without this:
    ```bash
    xattr -cr /Applications/Phew.app

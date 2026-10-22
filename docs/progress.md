@@ -116,3 +116,4 @@ Next step: Task 4, Step 1 (M6)
 | 2026-10-22 | M6 | Task 1: CLI help, sudo, failure text | Polish CLI help and step failure text | PhewCLITests added; sudo -v first; failure "<title>: <last stderr line>"; root help shows scan/clean/config |
 | 2026-10-22 | M6 | Task 2: README, NOTICE | Add README and NOTICE | screenshots skipped ("Screenshots coming"); README commands run: scan, clean --dry-run, clean (asks, needs a terminal), list, versions, config. HOME= does not redirect phew (getpwuid home): a test root landed in the real config and was removed |
 | 2026-10-22 | M6 | Task 3: release build | Add make release | dist/Phew-0.1.0.zip 3.4 MB; lipo x86_64 arm64 for both; adhoc; shasum -c OK; unzip + xattr + phew --version direct and through a link OK |
+| 2026-10-22 | M6 | Task 3: dmg | Add a dmg to make release | user asked for dmg and zip; Phew-0.1.0.dmg 3.7 MB with an Applications link; hdiutil verify OK; install from the mounted dmg OK |
