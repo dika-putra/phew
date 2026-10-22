@@ -247,7 +247,7 @@ Pin files are searched in the configured project roots. Removal for version mana
 
 ## 11. Menu bar app
 
-`MenuBarExtra` with `.menuBarExtraStyle(.window)`. Menu bar icon only (no Dock icon, `LSUIElement`). Optional short text next to the icon: free space, off by default.
+`NSStatusItem` with an `NSPopover` holding the SwiftUI content (changed in M4 from `MenuBarExtra`, whose window slid under the menu bar when its height changed). Menu bar icon only (no Dock icon, `LSUIElement`). Optional short text next to the icon: free space, off by default.
 
 Popover, top to bottom:
 1. Header: volume name, available space and a bar (`volumeAvailableCapacityForImportantUsage`, the number Finder shows, labeled "Available"). Refresh button. "Scanned 12 min ago" or a progress line while scanning.
