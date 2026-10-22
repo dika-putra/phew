@@ -50,8 +50,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         if ProcessInfo.processInfo.environment["PHEW_PREVIEW"] != nil { showPreviewWindow() }
     }
 
-    /// SwiftUI's preferredColorScheme does not change an NSPopover's own appearance, so the
-    /// choice is applied app-wide. nil follows the system.
+    /// The popover inherits the status bar button's appearance (vibrant dark with a dark menu
+    /// bar), not the app's, so the choice is set on the popover itself as well. nil follows the
+    /// menu bar, which follows the system.
     private func applyAppearance() {
         let name: NSAppearance.Name? = switch Appearance(rawValue: UserDefaults.standard.string(forKey: "appearance") ?? "") {
         case .light: .aqua
@@ -60,6 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
         let appearance = name.flatMap(NSAppearance.init(named:))
         if NSApp.appearance != appearance { NSApp.appearance = appearance }
+        popover.appearance = appearance
     }
 
     private func setUpStatusItem() {
