@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5.5-polish.md
 Branch: m5.5-polish (from main; the M6 plan waits on m6-release)
-Next step: Task 5, Step 1 (M5.5)
+Next step: Merge m5.5-polish into main if the user agrees, then merge main into m6-release and start M6 Task 1
 
 ## M5.5 decisions (UI review, 2026-10-22)
 
@@ -47,6 +47,9 @@ Next step: Task 5, Step 1 (M5.5)
 
 - README (M6 Task 2): open with `<picture>` using `docs/banner-dark.png` and `docs/banner-light.png` (2560x640, show at width 640).
 - README "Uninstall": quit Phew, turn off Launch at login in Settings, delete `/Applications/Phew.app`, `rm ~/.local/bin/phew` (if installed from Settings), `rm -rf ~/.config/phew ~/Library/Caches/com.dikaputra.phew`, `defaults delete com.dikaputra.phew`.
+
+- Scan stage label: a late stage update from one scan can show briefly during the next (cosmetic; fix with a scan counter if seen).
+- Clearing a group checkbox keeps all its preselected items out of Quick clean (by design, pinned by a test); watch for user confusion.
 
 ## Log
 
@@ -108,3 +111,5 @@ Next step: Task 5, Step 1 (M5.5)
 | 2026-10-22 | M5.5 | Task 2: views | Follow HIG sizes and add two-line rows | snapshots checked; Home tier badges stack when they don't fit one line; checkbox is a 28 pt target too |
 | 2026-10-22 | M5.5 | Task 3: logo | Add Phew logo | user ok; make icons regenerates icns and banners |
 | 2026-10-22 | M5.5 | Task 4: AppKit + user check | Add status item menu and shortcuts | user checked all 14 points ok; popover animation kept on; ⌘Q moved to the popover root |
+| 2026-10-22 | M5.5 | Task 5: spec, carry notes | Describe M5.5 UI changes in the spec | README banner and Uninstall carried into M6 |
+| 2026-10-22 | M5.5 | Final review fixes | Select items that become ready on refresh | 0 Critical, 1 Important fixed with test; minors tested or carried |
