@@ -58,14 +58,14 @@ Groups: macOS, Xcode, Android, Flutter, Node, Python, PHP, Ruby, Java, .NET, Go,
 
 Project folders are searched for these stacks: Flutter, Node, Rust, PHP, Laravel, WordPress, Python, CocoaPods, SwiftPM, Gradle, Maven, Ruby, .NET, Elixir, Terraform.
 
-Quick clean takes the items that are ticked by default: Regenerates and Redownload items that are ready, not heavy, and not in a project you touched in the last 14 days. Untick an item to keep it out of Quick clean; Settings > Kept items lists those.
+Quick clean takes the items that are ticked by default: Regenerates and Redownload items that are ready, not heavy, not opt-in, not needing admin, and not in a project you touched recently (14 days by default, Settings > Dormant after). Untick an item to keep it out of Quick clean; Settings > Kept items lists those.
 
 ## Safety
 
 - In use: items used by a running app (Xcode, Android Studio, Simulator), a dev server running in a project, or a Node version active in a terminal (`nvm use`) are skipped and the reason is shown.
 - Versions: the default and active fvm, nvm and rustup versions are locked and never removed. "Used by" shows which projects pin a version.
 - Projects: inside a git repository, only folders git ignores and that hold no tracked files are cleaned.
-- Every clean shows a confirmation with each item, its tier and size. Deletes are permanent, not moved to the Trash.
+- Every clean shows the plan first: each item, its tier and size. The app and `phew clean` ask before deleting, unless you pass `--yes`. Deletes are permanent, not moved to the Trash.
 - The receipt shows the space measured after deleting, not an estimate.
 - Admin rights are only asked for the iOS simulator dyld cache, which root owns.
 
@@ -101,7 +101,7 @@ For a cache Phew does not know, add it to `~/.config/phew/config.json`:
 }
 ```
 
-Rules: the id starts with `custom.`, paths start with `/` or `~/`, and protected folders are refused: your home folder itself, the top-level personal folders (Library, Documents, Desktop, Downloads, Pictures, Movies, Music, Applications), `~/.config`, `~/.ssh`, `~/.gnupg` and system folders. Tier is `regenerates`, `redownload` or `dataLoss`. Press Reload in Settings after editing. Invalid entries are skipped and listed in Settings.
+Rules: the id starts with `custom.`, and paths start with `/` or `~/` and must be inside your home folder. Refused: your home folder itself, the top-level personal folders (Library, Documents, Desktop, Downloads, Pictures, Movies, Music, Applications), and anything in `~/.config`, `~/.ssh` or `~/.gnupg`. Extra folders with tier `regenerates` or `redownload` are ticked by default and join Quick clean, so point them at caches only. Tier is `regenerates`, `redownload` or `dataLoss`. Press Reload in Settings after editing. Invalid entries are skipped and listed in Settings.
 
 ## Known limitations
 

@@ -35,7 +35,7 @@ final class SudoSpy: @unchecked Sendable {
 
 @Test func cancelledSudoIsSkippedNotFailed() async {
     let spy = SudoSpy()
-    let result = await sudoAdminDelete([URL(fileURLWithPath: "/tmp/x")]) { args in
+    let result = await sudoAdminDelete([URL(fileURLWithPath: "/tmp/x")], isTerminal: true) { args in
         spy.calls.append(args)
         return 1
     }
@@ -44,6 +44,28 @@ final class SudoSpy: @unchecked Sendable {
 }
 
 @Test func failedDeleteAfterSudoIsAFailure() async {
-    let result = await sudoAdminDelete([URL(fileURLWithPath: "/tmp/x")]) { args in args == ["-v"] ? 0 : 1 }
+    let result = await sudoAdminDelete([URL(fileURLWithPath: "/tmp/x")], isTerminal: true) { args in args == ["-v"] ? 0 : 1 }
     #expect(result == .failed("sudo admin-delete-dyld exited with 1"))
+}
+
+@Test func sudoRunsAdminDeleteWithThePaths() async {
+    let spy = SudoSpy()
+    let result = await sudoAdminDelete([URL(fileURLWithPath: "/tmp/a"), URL(fileURLWithPath: "/tmp/b")], isTerminal: true) { args in
+        spy.calls.append(args)
+        return 0
+    }
+    #expect(result == .done)
+    #expect(spy.calls.count == 2)
+    #expect(spy.calls.last?.suffix(3) == ["admin-delete-dyld", "/tmp/a", "/tmp/b"])
+}
+
+/// From cron or a script sudo can't ask; that is a failure (exit 1), not "password not given".
+@Test func sudoWithoutTerminalFails() async {
+    let spy = SudoSpy()
+    let result = await sudoAdminDelete([URL(fileURLWithPath: "/tmp/x")], isTerminal: false) { args in
+        spy.calls.append(args)
+        return 0
+    }
+    #expect(result == .failed("Needs a terminal to ask for the admin password."))
+    #expect(spy.calls.isEmpty)
 }

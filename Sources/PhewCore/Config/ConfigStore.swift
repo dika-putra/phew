@@ -105,6 +105,14 @@ public struct ConfigStore: Sendable {
             if PathGuard.isForbidden(url, home: home) || PathGuard.isForbidden(url.resolvingSymlinksInPath(), home: home) {
                 return "path \"\(path)\" is protected"
             }
+            // Custom targets are ticked by default and join Quick clean: only inside home,
+            // and never in ~/.config (tokens, Phew's own config).
+            for candidate in [url, url.resolvingSymlinksInPath()] {
+                let c = candidate.standardizedFileURL.pathComponents.map { $0.lowercased() }
+                let h = home.standardizedFileURL.pathComponents.map { $0.lowercased() }
+                if !c.starts(with: h) { return "path \"\(path)\" must be inside your home folder" }
+                if c.count > h.count, c[h.count] == ".config" { return "path \"\(path)\" is protected" }
+            }
         }
         return nil
     }

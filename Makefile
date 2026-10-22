@@ -41,8 +41,11 @@ release:
 	cp $(REL)/PhewApp $(REL)/phew $(DIST)/Phew.app/Contents/MacOS/
 	cp App/AppIcon.icns $(DIST)/Phew.app/Contents/Resources/
 	sed 's/VERSION/$(VERSION)/' App/Info.plist > $(DIST)/Phew.app/Contents/Info.plist
+	# Extended attributes (com.apple.provenance) would land in the zip as ._ files, which
+	# `unzip` puts inside the bundle and breaks the signature.
+	xattr -cr $(DIST)/Phew.app
 	codesign --force --deep --sign - $(DIST)/Phew.app
-	cd $(DIST) && ditto -c -k --keepParent Phew.app Phew-$(VERSION).zip
+	cd $(DIST) && ditto -c -k --norsrc --noextattr --keepParent Phew.app Phew-$(VERSION).zip
 	cd $(DIST) && shasum -a 256 Phew-$(VERSION).zip > Phew-$(VERSION).zip.sha256
 	mkdir -p $(DIST)/dmg
 	cp -R $(DIST)/Phew.app $(DIST)/dmg/

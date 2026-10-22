@@ -117,3 +117,24 @@ private let fakeHome = URL(fileURLWithPath: "/Users/phew-test")
         #expect(try String(contentsOf: file, encoding: .utf8) == "{ bad")
     }
 }
+
+/// Custom targets are preselected and join Quick clean, so they may only point inside the home
+/// folder, and never into ~/.config (tokens, Phew's own config).
+@Test func customTargetsStayInsideHome() throws {
+    try withTempDir { dir in
+        let store = ConfigStore(url: dir.appending(path: "config.json"), home: fakeHome)
+        var c = PhewConfig()
+        let inside = CustomTargetSpec(id: "custom.ok", title: "OK", paths: ["/Users/phew-test/.mytool/cache"], tier: .regenerates)
+        c.customTargets = [
+            CustomTargetSpec(id: "custom.apps", title: "Apps", paths: ["/Applications"], tier: .regenerates),
+            CustomTargetSpec(id: "custom.usr", title: "Usr", paths: ["/usr/local/lib"], tier: .regenerates),
+            CustomTargetSpec(id: "custom.brew", title: "Brew", paths: ["/opt/homebrew"], tier: .regenerates),
+            CustomTargetSpec(id: "custom.gh", title: "gh", paths: ["~/.config/gh"], tier: .regenerates),
+            inside,
+        ]
+        try store.save(c)
+        let loaded = store.load()
+        #expect(loaded.validTargets == [inside])
+        #expect(loaded.issues.count == 4)
+    }
+}
