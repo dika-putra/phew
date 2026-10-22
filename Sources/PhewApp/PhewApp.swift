@@ -82,7 +82,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         guard let button = statusItem?.button else { return }
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
+        let window = popover.contentViewController?.view.window
+        window?.makeKey()
+        // No control focused on open: macOS would put a focus ring on the first button (Refresh).
+        window?.makeFirstResponder(nil)
     }
 
     private func showPreviewWindow() {
