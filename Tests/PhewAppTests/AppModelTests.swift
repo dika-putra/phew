@@ -252,3 +252,21 @@ private func receipt(for plan: CleanPlan) -> Receipt {
     #expect(m.snapshot?.dockerOffBytes == nil)
     #expect(m.snapshot?.items.map(\.id) == ["a", "docker.buildcache"])
 }
+
+@MainActor @Test func partialFailureKeepsRemovalAndNote() async throws {
+    var tool = appItem("pnpm", bytes: 100)
+    tool.removal = .steps([.run(["pnpm", "store", "prune"])])
+    tool.measure = .docker
+    tool.note = "Used by web"
+    let m = try model(items: [tool]) { plan, _ in
+        Receipt(entries: [ReceiptEntry(itemID: "pnpm", title: "", claimed: 100, measured: 40, failures: ["boom"], skippedReason: nil)],
+                freeBefore: 0, freeAfter: 0)
+    }
+    m.selection = ["pnpm"]
+    m.cleanSelected(in: "G")
+    m.confirm()
+    await m.waitForClean()
+    let kept = try #require(m.snapshot?.items.first)
+    #expect(kept.bytes == 60)
+    #expect(kept.removal == tool.removal && kept.measure == .docker && kept.note == "Used by web")
+}

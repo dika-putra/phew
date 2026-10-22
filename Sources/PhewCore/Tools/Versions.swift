@@ -10,6 +10,7 @@ public enum Versions {
         async let node = nvm(home: home, pins: pins, run: run)
         async let rust = rustup(home: home, pins: pins, run: run)
         // Show "in use" in the list already; the planner checks again before removing.
+        let running = running.snapshot()
         return await (flutter + node + rust).map { item in
             guard item.state == .ready, let app = running.firstRunning(item.target.skipIfRunning) else { return item }
             var updated = Item(id: item.id, target: item.target, urls: item.urls, bytes: item.bytes,
@@ -77,6 +78,32 @@ public enum Versions {
             return item(id: "rustup:\(name)", title: "Rust \(short)", dir: dir, state: state, users: Set(users),
                         steps: [.run(loginShell("rustup toolchain uninstall \(shellQuote(name))"))])
         }
+    }
+
+    /// The lock that applies right now (the scan may be hours old): fvm global, nvm default,
+    /// rustup default or active. nil when the version may be removed.
+    public static func currentLock(for item: Item, run: @Sendable ([String]) async -> ShellResult? = liveRun) async -> String? {
+        guard let dir = item.urls.first ?? item.target.paths.first.map({ URL(fileURLWithPath: $0) }) else { return nil }
+        let name = dir.lastPathComponent
+        if item.id.hasPrefix("fvm:") {
+            let link = dir.deletingLastPathComponent().deletingLastPathComponent().appending(path: "default")
+            let target = try? FileManager.default.destinationOfSymbolicLink(atPath: link.path)
+            return target.map { URL(fileURLWithPath: $0).lastPathComponent } == name ? "fvm global" : nil
+        }
+        if item.id.hasPrefix("nvm:") {
+            let nvmDir = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            let out = await run(["/bin/bash", "-c", "export NVM_DIR=\(shellQuote(nvmDir.path)); source \"$NVM_DIR/nvm.sh\" >/dev/null 2>&1; nvm version default"])
+            guard let current = lastLine(out) else { return "Couldn't check the nvm default" }
+            return current == name ? "nvm default" : nil
+        }
+        if item.id.hasPrefix("rustup:") {
+            let out = await run(loginShell("rustup toolchain list"))
+            guard let out, out.status == 0 else { return "Couldn't check rustup" }
+            let line = out.stdout.split(separator: "\n").first { $0.hasPrefix(name + " ") || $0 == name }
+            if line?.contains("default") == true { return "rustup default" }
+            if line?.contains("active") == true { return "Active Rust toolchain" }
+        }
+        return nil
     }
 
     private static func versionFolders(_ folder: URL) -> [URL] {

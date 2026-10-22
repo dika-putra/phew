@@ -8,6 +8,7 @@ public struct Executor: Sendable {
     let dockerReclaimable: @Sendable (String) async -> Int64?
     let runtimePresent: @Sendable (String) async -> Bool?
     let runAdmin: @Sendable ([URL]) async -> AdminResult
+    let currentLock: @Sendable (Item) async -> String?
 
     public init(home: URL = FileManager.default.homeDirectoryForCurrentUser, running: RunningCheck = .live,
                 devProcesses: DevProcessCheck = .live,
@@ -16,7 +17,9 @@ public struct Executor: Sendable {
                 },
                 dockerReclaimable: @escaping @Sendable (String) async -> Int64? = { _ in nil },
                 runtimePresent: @escaping @Sendable (String) async -> Bool? = { _ in nil },
-                runAdmin: @escaping @Sendable ([URL]) async -> AdminResult = { _ in .failed("Needs an administrator") }) {
+                runAdmin: @escaping @Sendable ([URL]) async -> AdminResult = { _ in .failed("Needs an administrator") },
+                currentLock: @escaping @Sendable (Item) async -> String? = { _ in nil }) {
+        self.currentLock = currentLock
         self.runAdmin = runAdmin
         self.home = home
         self.running = running
@@ -33,6 +36,7 @@ public struct Executor: Sendable {
                          measured: 0, failures: [], skippedReason: $0.reason)
         }
         let dev = plan.items.contains { $0.project != nil } ? devProcesses.snapshot() : nil
+        let running = running.snapshot()
         var admin: [Item] = []
         for item in plan.items {
             if item.removal == .adminDyld {
@@ -41,7 +45,9 @@ public struct Executor: Sendable {
             }
             progress(item.target.title)
             // An app or dev server may have started since the plan was made.
-            if let reason = Planner.skipReason(item, running: running, dev: dev) {
+            // A version may have become the default or global since the scan.
+            let lock = await currentLock(item).map { "\($0). Phew won't remove it." }
+            if let reason = lock ?? Planner.skipReason(item, running: running, dev: dev) {
                 entries.append(ReceiptEntry(itemID: item.id, title: item.target.title, claimed: item.bytes,
                                             measured: 0, failures: [], skippedReason: reason))
                 continue
@@ -193,6 +199,7 @@ extension Executor {
     public static func live(runAdmin: @escaping @Sendable ([URL]) async -> AdminResult) -> Executor {
         Executor(dockerReclaimable: { await Docker.reclaimable(for: $0) },
                  runtimePresent: { await Simulators.runtimePresent($0) },
-                 runAdmin: runAdmin)
+                 runAdmin: runAdmin,
+                 currentLock: { await Versions.currentLock(for: $0) })
     }
 }

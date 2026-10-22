@@ -16,6 +16,7 @@ public enum Planner {
     /// `devProcesses` is checked now for project items: the state from the scan may be hours old.
     public static func plan(_ selected: [Item], running: RunningCheck, devProcesses: DevProcessCheck = .live) -> CleanPlan {
         let dev = selected.contains { $0.project != nil } ? devProcesses.snapshot() : nil
+        let running = running.snapshot()
         var items: [Item] = []
         var skipped: [SkippedItem] = []
         for item in selected {

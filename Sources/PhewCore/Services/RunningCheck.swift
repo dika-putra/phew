@@ -7,16 +7,20 @@ import AppKit
 public struct RunningCheck: Sendable {
     private let runningBundleIDs: @Sendable () -> [String: String]
     private let processMatches: @Sendable (String) -> Bool
-    private let environmentMatches: @Sendable (String) -> String?
+    private let environmentMatches: (@Sendable (String) -> String?)?
+    /// Lines of "<display name>\t<command line and environment>" for the user's processes.
+    private let environmentSnapshot: (@Sendable () -> [String])?
 
     public init(
         runningBundleIDs: @Sendable @escaping () -> [String: String],
         processMatches: @Sendable @escaping (String) -> Bool,
-        environmentMatches: @Sendable @escaping (String) -> String? = { _ in nil }
+        environmentMatches: (@Sendable (String) -> String?)? = nil,
+        environmentSnapshot: (@Sendable () -> [String])? = nil
     ) {
         self.runningBundleIDs = runningBundleIDs
         self.processMatches = processMatches
         self.environmentMatches = environmentMatches
+        self.environmentSnapshot = environmentSnapshot
     }
 
     public static let live = RunningCheck(
@@ -37,7 +41,7 @@ public struct RunningCheck: Sendable {
             p.waitUntilExit()
             return p.terminationStatus == 0
         },
-        environmentMatches: { path in
+        environmentSnapshot: {
             // `ps -E` adds each process's environment after its command line (own user only).
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/bin/ps")
@@ -45,25 +49,43 @@ public struct RunningCheck: Sendable {
             let out = Pipe()
             p.standardOutput = out
             p.standardError = FileHandle.nullDevice
-            guard (try? p.run()) != nil else { return nil }
+            guard (try? p.run()) != nil else { return [] }
             let data = out.fileHandleForReading.readDataToEndOfFile()
             p.waitUntilExit()
             let own = String(getpid())
-            for line in String(decoding: data, as: UTF8.self).split(separator: "\n") {
+            return String(decoding: data, as: UTF8.self).split(separator: "\n").compactMap { line in
                 let fields = line.trimmingCharacters(in: .whitespaces).split(separator: " ", maxSplits: 1)
-                guard fields.count == 2, fields[0] != own, containsPathEntry(String(fields[1]), path) else { continue }
-                return processDisplayName(String(fields[1].split(separator: " ").first ?? ""))
+                guard fields.count == 2, fields[0] != own else { return nil }
+                return processDisplayName(String(fields[1].split(separator: " ").first ?? "")) + "\t" + fields[1]
             }
-            return nil
         }
     )
 
+    /// Takes the process environment list once; use for many checks in a row (one ps call
+    /// instead of one per item, about 70 ms each).
+    public func snapshot() -> RunningCheck {
+        guard environmentMatches == nil, let environmentSnapshot else { return self }
+        let lines = environmentSnapshot()
+        return RunningCheck(runningBundleIDs: runningBundleIDs, processMatches: processMatches,
+                            environmentSnapshot: { lines })
+    }
+
     public func firstRunning(_ identifiers: [String]) -> String? {
         guard !identifiers.isEmpty else { return nil }
-        let apps = identifiers.contains { !$0.hasPrefix("proc:") } ? runningBundleIDs() : [:]
+        let apps = identifiers.contains { !$0.hasPrefix("proc:") && !$0.hasPrefix("env:") } ? runningBundleIDs() : [:]
+        var lines: [String]?
         for id in identifiers {
             if id.hasPrefix("env:") {
-                if let name = environmentMatches(String(id.dropFirst(4))) { return name }
+                let path = String(id.dropFirst(4))
+                if let environmentMatches {
+                    if let name = environmentMatches(path) { return name }
+                } else if let environmentSnapshot {
+                    if lines == nil { lines = environmentSnapshot() }
+                    for line in lines! {
+                        let parts = line.split(separator: "\t", maxSplits: 1)
+                        if parts.count == 2, containsPathEntry(String(parts[1]), path) { return String(parts[0]) }
+                    }
+                }
             } else if id.hasPrefix("proc:") {
                 let spec = String(id.dropFirst(5))
                 let parts = spec.split(separator: "=", maxSplits: 1).map(String.init)

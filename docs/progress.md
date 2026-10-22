@@ -4,20 +4,22 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5-tools.md
 Branch: m5-tools
-Next step: Final review of m5-tools, then M6 plan
+Next step: Merge m5-tools if the user agrees, then write the M6 plan (CLI polish, README, release zip, public repo)
 
-## Carry into M5 (deferred from the M2, M3 and M4 reviews)
+## Carry into M6 (deferred from the M2 to M5 reviews)
 
 - TOCTOU between `PathGuard.check` and `removeItem` (same-user race).
 - Nested custom targets are counted twice; cleaning both gives a `missingParent` failure.
-- `CleanPlan.needsAdmin` is ignored by the CLI and the app. Handle it in M5 with the admin targets.
 - `git ls-files` gets every candidate path as an argument (ARG_MAX on huge Laravel views folders; fails safe).
 - Rust `target` is deleted directly; spec says `cargo clean` first (same result).
 - The prune list also skips `bin obj deps _build .build .gradle .terraform` beyond spec section 7.
-- App: refresh is not blocked during a clean (numbers only); a notification click mid-clean moves to Home.
-- App: alert text says "about Zero KB" when nothing is reclaimable; ConfirmView heading "Skipped, in use" also covers unreadable items.
-- App: `CLIInstaller` replaces any symlink at `~/.local/bin/phew`, also one pointing at a dev build; `SMAppService` `.requiresApproval` shows no message; Home shows a spinner for "No scan yet".
 - Dev server check: the Gradle daemon's cwd is `~/.gradle/daemon`, so it never matches a project.
+- CLI: a cancelled or wrong sudo password for dyld shows as a failure, not "skipped".
+- Receipt failure text shows the full argv; with `zsh -lc` the first stderr line may be profile noise.
+- Docker: a `docker` CLI without Docker Desktop (colima, OrbStack stopped) shows "off · 0 B" and Start Docker fails silently; `docker info` can hold the tool scan up to 60 s.
+- nvm from Homebrew, or nvm with no default alias, locks every version; `NVM_DIR`, `RUSTUP_HOME`, `CARGO_HOME` are read from the GUI environment only.
+- "Used by" misses `.nvmrc` aliases (`lts/*`) and rust pins like `1.79` against `1.79.0-…`.
+- The osascript admin prompt is killed after 600 s.
 
 ## Log
 
@@ -73,3 +75,4 @@ Next step: Final review of m5-tools, then M6 plan
 | 2026-10-22 | M5 | Task 7: wiring and minors | Show tool items in the CLI and the app | phew versions; Docker off row with Start Docker; carried M4 minors fixed |
 | 2026-10-22 | M5 | Task 8 fix: version in use | Treat a version as in use when a process has it on PATH | nvm use in a terminal now blocks removing that version |
 | 2026-10-22 | M5 | Task 8: milestone check | Read the fvm global next to its versions folder | user checked Versions and Start Docker; nvm use detection added |
+| 2026-10-22 | M5 | Final review fixes | Fix M5 review findings | 1 Critical + 4 Important fixed; minors in Carry into M6 |

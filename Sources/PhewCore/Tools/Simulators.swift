@@ -23,7 +23,7 @@ private func parseDate(_ text: String?) -> Date? {
     return f.date(from: text)
 }
 
-private struct DeviceList: Decodable {
+struct DeviceList: Decodable {
     struct Device: Decodable {
         let udid: String
         let state: String
@@ -72,14 +72,24 @@ public enum Simulators {
             items.append(item)
         }
         if let runtimesOut, runtimesOut.status == 0 {
+            let byRuntime = (try? JSONDecoder().decode(DeviceList.self, from: devicesJSON))?.devices ?? [:]
             for r in parseRuntimes(runtimesJSON: Data(runtimesOut.stdout.utf8), devicesJSON: devicesJSON) {
+                let udids = (byRuntime[r.identifier] ?? []).map(\.udid)
+                // A device of this runtime that boots after the scan shows up as a process with its
+                // device folder in the command line; checked again before the delete.
                 let target = PathTarget(id: "ios.runtimes:\(r.uuid)", group: "Xcode", title: "\(r.platform) \(r.version) runtime",
-                                        tier: .redownload, flags: [.heavy], paths: [])
+                                        tier: .redownload, flags: [.heavy], paths: [],
+                                        skipIfRunning: udids.map { "proc:Simulator=CoreSimulator/Devices/\($0)/" })
                 var item = Item(id: target.id, target: target, urls: [], bytes: r.sizeBytes, lastUsed: r.lastUsed,
                                 state: r.booted > 0 ? .inUse(app: "Simulator") : .ready)
-                // simctl wants the UUID (or build), not "18.5".
-                item.removal = .steps([.run([xcrun, "simctl", "runtime", "delete", r.uuid]),
-                                       .retry(times: 3, delaySeconds: 3, [xcrun, "simctl", "delete", "unavailable"])])
+                // simctl wants the UUID (or build), not "18.5". Only this runtime's simulators are
+                // deleted afterwards, not every unavailable one on the Mac.
+                var steps: [Step] = [.run([xcrun, "simctl", "runtime", "delete", r.uuid])]
+                if !udids.isEmpty {
+                    steps.append(.retry(times: 3, delaySeconds: 3, [xcrun, "simctl", "delete"] + udids))
+                    item.note = "Also deletes \(udids.count) simulator\(udids.count == 1 ? "" : "s") of this runtime and their app data"
+                }
+                item.removal = .steps(steps)
                 item.measure = .runtime(uuid: r.uuid)
                 items.append(item)
             }

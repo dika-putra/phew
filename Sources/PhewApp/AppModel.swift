@@ -169,8 +169,12 @@ final class AppModel {
                 let old = snap.items[i]
                 var updated = Item(id: old.id, target: old.target, urls: old.urls, bytes: left,
                                    lastUsed: old.lastUsed, state: old.state)
+                // Keep how it is cleaned: a tool item must never fall back to deleting its folder.
                 updated.project = old.project
                 updated.preselected = old.preselected
+                updated.removal = old.removal
+                updated.measure = old.measure
+                updated.note = old.note
                 snap.items[i] = updated
             }
         }
