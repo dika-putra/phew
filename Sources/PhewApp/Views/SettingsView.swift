@@ -4,7 +4,6 @@ import SwiftUI
 
 enum Appearance: String, CaseIterable {
     case system = "System", light = "Light", dark = "Dark"
-
 }
 
 struct SettingsView: View {
