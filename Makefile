@@ -2,7 +2,7 @@ PREFIX ?= $(HOME)/.local
 APP := build/Phew.app
 VERSION := $(shell sed -n 's/.*version = "\(.*\)"/\1/p' Sources/PhewCore/AppInfo.swift)
 
-.PHONY: build test install app run-app icons
+.PHONY: build test install app run-app icons release
 
 build:
 	swift build -c release
@@ -29,3 +29,18 @@ run-app: app
 
 icons:
 	swift scripts/make-icons.swift
+
+# Universal (arm64 + x86_64) app with the CLI inside, zipped with a SHA-256 next to it.
+DIST := dist
+REL := .build/out/Products/Release
+release:
+	swift build -c release --arch arm64 --arch x86_64 --product PhewApp
+	swift build -c release --arch arm64 --arch x86_64 --product phew
+	rm -rf $(DIST)
+	mkdir -p $(DIST)/Phew.app/Contents/MacOS $(DIST)/Phew.app/Contents/Resources
+	cp $(REL)/PhewApp $(REL)/phew $(DIST)/Phew.app/Contents/MacOS/
+	cp App/AppIcon.icns $(DIST)/Phew.app/Contents/Resources/
+	sed 's/VERSION/$(VERSION)/' App/Info.plist > $(DIST)/Phew.app/Contents/Info.plist
+	codesign --force --deep --sign - $(DIST)/Phew.app
+	cd $(DIST) && ditto -c -k --keepParent Phew.app Phew-$(VERSION).zip
+	cd $(DIST) && shasum -a 256 Phew-$(VERSION).zip > Phew-$(VERSION).zip.sha256

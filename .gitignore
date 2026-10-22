@@ -6,3 +6,4 @@ xcuserdata/
 *.xcuserstate
 .superpowers/
 build/
+dist/
