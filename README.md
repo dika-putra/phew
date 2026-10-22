@@ -103,6 +103,32 @@ For a cache Phew does not know, add it to `~/.config/phew/config.json`:
 
 Rules: the id starts with `custom.`, and paths start with `/` or `~/` and must be inside your home folder. Refused: your home folder itself, the top-level personal folders (Library, Documents, Desktop, Downloads, Pictures, Movies, Music, Applications), and anything in `~/.config`, `~/.ssh` or `~/.gnupg`. Extra folders with tier `regenerates` or `redownload` are ticked by default and join Quick clean, so point them at caches only. Tier is `regenerates`, `redownload` or `dataLoss`. Press Reload in Settings after editing. Invalid entries are skipped and listed in Settings.
 
+## Troubleshooting
+
+**"Phew is damaged and can't be opened" or "Apple could not verify Phew".** macOS quarantines apps that are not signed with a Developer ID. Run `xattr -cr /Applications/Phew.app` and open it again.
+
+**No icon in the menu bar.** Phew has no Dock icon or window. On a Mac with a notch, a full menu bar hides icons behind it: quit a few menu bar apps or use a menu bar manager. Check that Phew runs with `pgrep -x PhewApp`.
+
+**An item says "Needs Full Disk Access".** Open System Settings > Privacy & Security > Full Disk Access (Settings > Full Disk Access > Open settings does this), turn on Phew, then press Refresh.
+
+**An item says "In use".** Quit the app it names (Xcode, Android Studio, Simulator, a dev server) and press Refresh. For a Node version, close the terminal where you ran `nvm use` with that version.
+
+**Docker shows "off".** Start Docker Desktop, or press Start Docker in the Docker group. Phew never starts it by itself. colima is not supported yet.
+
+**Projects is empty.** Add the folder that holds your projects in Settings > Project folders. Inside a git repository, only folders git ignores are listed.
+
+**`phew: command not found`.** The CLI link is in `~/.local/bin`. Add it to your PATH, for example in `~/.zshrc`:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+**`phew clean` stops with "Needs a terminal to ask for the admin password".** The simulator dyld cache needs sudo, which asks in a terminal. Run that clean in Terminal, not from a script.
+
+**Sizes look wrong or old.** Press Refresh, or delete the cached scan: `rm ~/Library/Caches/com.dikaputra.phew/scan.json`.
+
+**Something else.** Open an issue at https://github.com/dika-putra/phew/issues (Settings > Report an issue) with the Phew version from Settings, your macOS version, and what you saw.
+
 ## Known limitations
 
 - Untested on Intel Macs. The release is a universal binary.
