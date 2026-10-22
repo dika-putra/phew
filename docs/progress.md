@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5.5-polish.md
 Branch: m5.5-polish (from main; the M6 plan waits on m6-release)
-Next step: Task 2, Step 1 (M5.5)
+Next step: Task 3, Step 1 (M5.5)
 
 ## M5.5 decisions (UI review, 2026-10-22)
 
@@ -102,3 +102,4 @@ Next step: Task 2, Step 1 (M5.5)
 | 2026-10-22 | M5 | Final review fixes | Fix M5 review findings | 1 Critical + 4 Important fixed; minors in Carry into M6 |
 | 2026-10-22 | M5.5 | Task 0: plan | Add M5.5 plan | UI review decisions recorded; logo concept I chosen |
 | 2026-10-22 | M5.5 | Task 1: model | Add kept items, last clean, scan stage and group selection | kept items in UserDefaults (app only); locked items no longer selectable via project checkbox |
+| 2026-10-22 | M5.5 | Task 2: views | Follow HIG sizes and add two-line rows | snapshots checked; Home tier badges stack when they don't fit one line; checkbox is a 28 pt target too |

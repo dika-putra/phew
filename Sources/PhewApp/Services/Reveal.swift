@@ -20,10 +20,7 @@ struct RevealButton: View {
     let urls: [URL]
 
     var body: some View {
-        Button { Reveal.show(urls) } label: { Image(systemName: "folder") }
-            .buttonStyle(.borderless)
+        IconButton(systemName: "folder", label: "Show in Finder") { Reveal.show(urls) }
             .foregroundStyle(.secondary)
-            .help("Show in Finder")
-            .accessibilityLabel("Show in Finder")
     }
 }

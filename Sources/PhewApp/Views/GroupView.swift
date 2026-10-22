@@ -13,32 +13,35 @@ struct ItemRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: 4) {
             Checkbox(state: model.selection.contains(item.id) ? .on : .off, label: "Select \(item.target.title)") {
                 model.toggle(item.id)
             }
-            .disabled(item.state == .unreadable || isLocked)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title ?? item.target.title).lineLimit(1).truncationMode(.middle)
-                if let note = item.note {
-                    Text(note).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+            .disabled(!model.isSelectable(item))
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(title ?? item.target.title).lineLimit(1).truncationMode(.middle)
+                    Spacer()
+                    if item.state == .unreadable {
+                        Button("Enable") { FullDiskAccess.openSettings() }.controlSize(.small)
+                    }
+                    Text(bytes(item.bytes)).monospacedDigit().foregroundStyle(.secondary)
+                    RevealButton(urls: Reveal.urls(for: item))
                 }
-                Text([bytes(item.bytes), item.lastUsed.map { "used \(relative($0))" }].compactMap { $0 }.joined(separator: " · "))
-                    .font(.caption).foregroundStyle(.secondary)
+                .frame(height: 28)
                 HStack(spacing: 4) {
                     TierBadge(tier: item.target.tier)
-                    if item.target.flags.contains(.heavy) { Badge(text: "Heavy", color: .secondary) }
-                    if item.target.flags.contains(.needsAdmin) { Badge(text: "Admin", color: .purple) }
+                    if item.target.flags.contains(.heavy) { Badge(text: "Heavy", color: Palette.gray) }
+                    if item.target.flags.contains(.needsAdmin) { Badge(text: "Admin", color: Palette.purple) }
                     StateBadge(state: item.state)
+                    if let detail = item.note ?? item.lastUsed.map({ "used \(relative($0))" }) {
+                        Text(detail).font(.subheadline).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+                    }
                 }
             }
-            Spacer()
-            if item.state == .unreadable {
-                Button("Enable") { FullDiskAccess.openSettings() }.controlSize(.small)
-            }
-            RevealButton(urls: Reveal.urls(for: item))
         }
-        .padding(.leading, 12 + indent).padding(.trailing, 12).padding(.vertical, 7)
+        .padding(.leading, 8 + indent).padding(.trailing, 8).padding(.vertical, 4)
+        .hoverHighlight()
     }
 }
 
@@ -49,7 +52,11 @@ struct GroupView: View {
     var body: some View {
         let items = model.items(in: group)
         VStack(spacing: 0) {
-            Header(title: group, back: { model.screen = .home })
+            Header(title: group, back: { model.screen = .home }, trailing: AnyView(
+                Checkbox(state: model.selectionState(items), label: "Select all in \(group)") { model.toggleAll(items) }
+                    .disabled(!items.contains(where: model.isSelectable))
+                    .help("Select all")
+            ))
             Divider()
             Scroll(maxHeight: 420) {
                 VStack(spacing: 0) {
@@ -79,22 +86,24 @@ struct ProjectsList: View {
 
     var body: some View {
         ForEach(projectGroups(items)) { project in
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: 4) {
                 ProjectCheckbox(model: model, root: project.id)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
                         Text(project.info.name).fontWeight(.semibold)
-                        if project.info.dormant { Badge(text: "Dormant", color: .secondary) }
+                        if project.info.dormant { Badge(text: "Dormant", color: Palette.gray) }
+                        Spacer()
+                        Text(bytes(project.bytes)).monospacedDigit().foregroundStyle(.secondary)
+                        RevealButton(urls: [project.id])
                     }
-                    Text("\(bytes(project.bytes)) · \(project.info.stacks.joined(separator: ", "))")
-                        .font(.caption).foregroundStyle(.secondary)
+                    .frame(height: 28)
+                    Text(project.info.stacks.joined(separator: ", ")).font(.subheadline).foregroundStyle(.secondary)
                 }
-                Spacer()
-                RevealButton(urls: [project.id])
             }
-            .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 2)
+            .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 4)
+            .hoverHighlight()
             ForEach(project.items) { item in
-                ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)), indent: 22)
+                ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)), indent: 32)
             }
             if !project.small.isEmpty {
                 Button {
@@ -104,13 +113,15 @@ struct ProjectsList: View {
                         Text("\(count(project.small.count, "small item")), \(bytes(project.small.reduce(0) { $0 + $1.bytes }))")
                         Image(systemName: expanded.contains(project.id) ? "chevron.up" : "chevron.down")
                     }
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 12).padding(.vertical, 4)
+                .padding(.leading, 40).padding(.trailing, 12).padding(.vertical, 4)
                 if expanded.contains(project.id) {
                     ForEach(project.small) { item in
-                        ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)), indent: 22)
+                        ItemRow(model: model, item: item, title: String(item.target.title.dropFirst(project.info.name.count + 2)), indent: 32)
                     }
                 }
             }
@@ -163,6 +174,8 @@ struct Checkbox: View {
             Image(systemName: state == .off ? "square" : state == .on ? "checkmark.square.fill" : "minus.square.fill")
                 .font(.system(size: 15))
                 .foregroundStyle(state == .off ? Color.secondary : Color.accentColor)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(label)
@@ -176,9 +189,9 @@ struct DockerOffRow: View {
     let diskBytes: Int64
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Docker is off · \(bytes(diskBytes)) in Docker's disk.")
-            Text("Start Docker to see and clean images and build cache.").font(.caption).foregroundStyle(.secondary)
+            Text("Start Docker to see and clean images and build cache.").font(.subheadline).foregroundStyle(.secondary)
             HStack {
                 Button(model.isStartingDocker ? "Starting Docker…" : "Start Docker") { Task { await model.startDocker() } }
                     .controlSize(.small)

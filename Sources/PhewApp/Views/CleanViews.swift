@@ -13,7 +13,7 @@ struct ConfirmView: View {
             Scroll(maxHeight: 300) {
                 VStack(spacing: 0) {
                     ForEach(plan.items) { item in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(item.target.title).lineLimit(1).truncationMode(.middle)
                                 Spacer()
@@ -21,13 +21,13 @@ struct ConfirmView: View {
                                 Text(bytes(item.bytes)).foregroundStyle(.secondary)
                             }
                             if let note = item.note {
-                                Text(note).font(.caption).foregroundStyle(.secondary)
+                                Text(note).font(.subheadline).foregroundStyle(.secondary)
                             }
                             if item.target.tier == .dataLoss {
-                                Text("Deletes data you can't get back.").font(.caption).foregroundStyle(.red)
+                                Text("Deletes data you can't get back.").font(.subheadline).foregroundStyle(Palette.red)
                             }
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
                         Divider()
                     }
                 }
@@ -35,27 +35,29 @@ struct ConfirmView: View {
             if !plan.skipped.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Skipped").fontWeight(.semibold)
-                    ForEach(plan.skipped, id: \.item.id) { Text($0.reason).font(.caption) }
+                    ForEach(plan.skipped, id: \.item.id) { Text($0.reason).font(.subheadline) }
                 }
-                .foregroundStyle(.orange)
+                .foregroundStyle(Palette.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(.orange.opacity(0.12))
+                .padding(12)
+                .background(Palette.orange.opacity(0.12))
             }
             if plan.needsAdmin {
                 Text("You'll be asked for your Mac password.")
-                    .font(.caption).foregroundStyle(.purple)
+                    .font(.subheadline).foregroundStyle(Palette.purple)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 12).padding(.top, 8)
             }
             Text("Deleted for good, not moved to the Trash.")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.subheadline).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 12).padding(.top, 8)
             HStack {
                 Spacer()
                 Button("Cancel") { model.screen = back }
+                // Return cleans, except when something can't be got back: then it takes a click.
                 Button("Clean \(bytes(plan.expectedBytes))") { model.confirm() }
+                    .keyboardShortcut(plan.hasDataLoss ? nil : .defaultAction)
                     .buttonStyle(.borderedProminent)
                     .tint(plan.hasDataLoss ? .red : .accentColor)
                     .disabled(plan.items.isEmpty)
@@ -74,7 +76,7 @@ struct CleaningView: View {
             Text("Cleaning \(title)…").foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(32)
+        .padding(24)
     }
 }
 
@@ -85,17 +87,17 @@ struct ReceiptView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 4) {
-                Image(systemName: "checkmark.circle").font(.title).foregroundStyle(.green)
+                Image(systemName: "checkmark.circle").font(.title).foregroundStyle(Palette.green)
                 Text("Phew. \(bytes(receipt.measuredTotal)) freed.").font(.title3).fontWeight(.semibold)
                 Text("Available \(bytes(receipt.freeBefore)) → \(bytes(receipt.freeAfter))")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             .padding(16)
             Divider()
             Scroll(maxHeight: 300) {
                 VStack(spacing: 0) {
                     ForEach(receipt.entries, id: \.itemID) { entry in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(entry.title).lineLimit(1).truncationMode(.middle)
                                 Spacer()
@@ -103,23 +105,23 @@ struct ReceiptView: View {
                                     .foregroundStyle(.secondary)
                             }
                             if let reason = entry.skippedReason {
-                                Text(reason).font(.caption).foregroundStyle(.orange)
+                                Text(reason).font(.subheadline).foregroundStyle(Palette.orange)
                             }
                             ForEach(entry.failures.prefix(5), id: \.self) {
-                                Text($0).font(.caption).foregroundStyle(.red).lineLimit(2)
+                                Text($0).font(.subheadline).foregroundStyle(Palette.red).lineLimit(2)
                             }
                             if entry.failures.count > 5 {
-                                Text("and \(entry.failures.count - 5) more").font(.caption).foregroundStyle(.red)
+                                Text("and \(entry.failures.count - 5) more").font(.subheadline).foregroundStyle(Palette.red)
                             }
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
                         Divider()
                     }
                 }
             }
             HStack {
                 Spacer()
-                Button("Done") { model.screen = .home }.buttonStyle(.borderedProminent)
+                Button("Done") { model.screen = .home }.keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
             }
             .padding(12)
         }

@@ -42,6 +42,30 @@ private struct ContentHeightKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
+/// Badge and status colors. Light mode uses darker shades than the system colors, which fall
+/// below a 4.5:1 contrast ratio on their own 15% tint; dark mode keeps the system colors.
+enum Palette {
+    static let lightValues: [String: UInt32] = [
+        "green": 0x116329, "blue": 0x0550AE, "orange": 0x953800,
+        "red": 0xA40E26, "purple": 0x6639BA, "gray": 0x57606A,
+    ]
+    static let green = color("green", dark: .systemGreen)
+    static let blue = color("blue", dark: .systemBlue)
+    static let orange = color("orange", dark: .systemOrange)
+    static let red = color("red", dark: .systemRed)
+    static let purple = color("purple", dark: .systemPurple)
+    static let gray = color("gray", dark: .secondaryLabelColor)
+
+    private static func color(_ name: String, dark: NSColor) -> Color {
+        let hex = lightValues[name]!
+        let light = NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                            blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        return Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+        })
+    }
+}
+
 extension Tier {
     var label: String {
         switch self {
@@ -53,9 +77,9 @@ extension Tier {
 
     var color: Color {
         switch self {
-        case .regenerates: .green
-        case .redownload: .blue
-        case .dataLoss: .red
+        case .regenerates: Palette.green
+        case .redownload: Palette.blue
+        case .dataLoss: Palette.red
         }
     }
 }
@@ -66,11 +90,10 @@ struct Badge: View {
 
     var body: some View {
         Text(text)
-            .font(.caption2)
+            .font(.caption)
             .lineLimit(1)
             .fixedSize()
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
+            .padding(.horizontal, 4)
             .foregroundStyle(color)
             .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
     }
@@ -87,9 +110,9 @@ struct StateBadge: View {
     var body: some View {
         switch state {
         case .ready: EmptyView()
-        case .inUse(let app): Badge(text: "In use: \(app)", color: .orange)
-        case .unreadable: Badge(text: "Needs Full Disk Access", color: .purple)
-        case .locked(let reason): Badge(text: "Locked: \(reason)", color: .secondary)
+        case .inUse(let app): Badge(text: "In use: \(app)", color: Palette.orange)
+        case .unreadable: Badge(text: "Needs Full Disk Access", color: Palette.purple)
+        case .locked(let reason): Badge(text: "Locked: \(reason)", color: Palette.gray)
         }
     }
 }
@@ -118,12 +141,8 @@ struct Header: View {
     var body: some View {
         HStack(spacing: 8) {
             if let back {
-                Button(action: back) { Image(systemName: "chevron.left").frame(width: 16, height: 16) }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .accessibilityLabel("Back")
+                IconButton(systemName: "chevron.left", label: "Back (Esc)", action: back)
                     .keyboardShortcut(.cancelAction)
-                    .help("Back (Esc)")
             } else {
                 Image(systemName: "wind").foregroundStyle(.tint)
             }
@@ -132,8 +151,40 @@ struct Header: View {
             trailing
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
+}
+
+/// Icon-only button with the HIG 28x28 pt hit area.
+struct IconButton: View {
+    let systemName: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(label)
+        .help(label)
+    }
+}
+
+struct HoverHighlight: ViewModifier {
+    @State private var hovered = false
+
+    func body(content: Content) -> some View {
+        content
+            .background(hovered ? Color.primary.opacity(0.06) : .clear)
+            .onHover { hovered = $0 }
+    }
+}
+
+extension View {
+    func hoverHighlight() -> some View { modifier(HoverHighlight()) }
 }
 
 func count(_ n: Int, _ noun: String) -> String {

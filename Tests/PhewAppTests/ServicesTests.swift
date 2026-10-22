@@ -61,3 +61,27 @@ final class Spy: @unchecked Sendable {
     #expect(throws: CLIInstallerError.self) { try CLIInstaller.install(appBundle: home.appending(path: "Phew.app"), home: home) }
     #expect(try FileManager.default.destinationOfSymbolicLink(atPath: bin.appending(path: "phew").path) == "/src/phew/.build/debug/phew")
 }
+
+private func rgb(_ hex: UInt32) -> [Double] {
+    [Double((hex >> 16) & 0xFF) / 255, Double((hex >> 8) & 0xFF) / 255, Double(hex & 0xFF) / 255]
+}
+
+private func luminance(_ c: [Double]) -> Double {
+    let l = c.map { $0 <= 0.03928 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+    return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]
+}
+
+private func contrast(_ a: [Double], _ b: [Double]) -> Double {
+    let (x, y) = (luminance(a), luminance(b))
+    return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+}
+
+/// WCAG ratio of badge text over its 15% tint on a white window, light mode.
+@Test func badgeTextContrastLight() {
+    #expect(Palette.lightValues.count == 6)
+    for (name, hex) in Palette.lightValues {
+        let fg = rgb(hex)
+        let bg = fg.map { 0.85 + 0.15 * $0 }
+        #expect(contrast(fg, bg) >= 4.5, "\(name)")
+    }
+}
