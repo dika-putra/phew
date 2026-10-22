@@ -2,9 +2,33 @@
 
 Resume here: read this file, then the plan named in "Current plan", then continue at "Next step".
 
-Current plan: docs/superpowers/plans/2026-10-22-m5-tools.md
-Branch: m5-tools
-Next step: Merge m5-tools if the user agrees, then write the M6 plan (CLI polish, README, release zip, public repo)
+Current plan: docs/superpowers/plans/2026-10-22-m5.5-polish.md
+Branch: m5.5-polish (from main; the M6 plan waits on m6-release)
+Next step: Task 1, Step 1 (M5.5)
+
+## M5.5 decisions (UI review, 2026-10-22)
+
+1. Right-click status item menu: Open, Refresh, Settings…, Quit (⌘Q); Quit button in Settings.
+2. Settings stays in the popover; ⌘, opens it.
+3. Return = Clean except when the plan has data-loss items; Esc = Cancel.
+4. Item rows on two lines, size right-aligned.
+5. Items sorted by size inside a group.
+6. Tri-state checkbox in each group header.
+7. Hover highlight on rows.
+8. Unticked preselected items are kept ("Kept items" in Settings); Quick clean leaves them out.
+9. Badge text contrast at least 4.5:1 (darker light-mode shades).
+10. Icon buttons have 28x28 pt hit areas.
+11. Information text at 11 pt (subheadline); badges 10 pt.
+12. Spacing scale 4/8/12/16/24.
+13. Popover resize animation back on (revert if it jumps).
+14. Scan stage text while scanning.
+15. "Last clean: X freed, Y ago" on Home.
+16. English only.
+17. Free space text next to the menu bar icon: deferred.
+18. Logo concept I (prompt with a breathing cursor): app icon #1E2229 with #7CF5C8 lines.
+19. Menu bar icon: template, chevron and curl only (replaces SF Symbol wind).
+20. README banner 1280x320, light and dark: icon, "phew" in monospace, one-line tagline.
+21. README Uninstall section (written in M6 Task 2).
 
 ## Carry into M6 (deferred from the M2 to M5 reviews)
 
@@ -76,3 +100,4 @@ Next step: Merge m5-tools if the user agrees, then write the M6 plan (CLI polish
 | 2026-10-22 | M5 | Task 8 fix: version in use | Treat a version as in use when a process has it on PATH | nvm use in a terminal now blocks removing that version |
 | 2026-10-22 | M5 | Task 8: milestone check | Read the fvm global next to its versions folder | user checked Versions and Start Docker; nvm use detection added |
 | 2026-10-22 | M5 | Final review fixes | Fix M5 review findings | 1 Critical + 4 Important fixed; minors in Carry into M6 |
+| 2026-10-22 | M5.5 | Task 0: plan | Add M5.5 plan | UI review decisions recorded; logo concept I chosen |
