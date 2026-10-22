@@ -144,19 +144,17 @@ struct ProjectCheckbox: View {
     let root: URL
 
     var body: some View {
-        let ready = model.projectItems(root).filter { $0.state != .unreadable }
-        let chosen = ready.filter { model.selection.contains($0.id) }.count
-        Checkbox(state: chosen == 0 ? .off : chosen == ready.count ? .on : .mixed, label: "Select project") {
+        let items = model.projectItems(root)
+        Checkbox(state: model.selectionState(items), label: "Select project") {
             model.toggleProject(root)
         }
-        .disabled(ready.isEmpty)
+        .disabled(!items.contains(where: model.isSelectable))
     }
 }
 
 /// One checkbox look for items and projects (a native Toggle has no mixed state).
 struct Checkbox: View {
-    enum State { case off, on, mixed }
-    let state: State
+    let state: CheckState
     let label: String
     let action: () -> Void
 

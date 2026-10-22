@@ -45,3 +45,10 @@ private func gi(_ id: String, _ group: String, _ bytes: Int64, tier: Tier = .reg
     #expect(groups[1].small.map(\.id) == ["b"])
     #expect(groups[1].bytes == 5_008_000)
 }
+
+@Test func keptItemsLeaveQuickClean() {
+    let s = Summary([gi("a", "X", 10), gi("b", "X", 5)], kept: ["a"])
+    #expect(s.quickClean.map(\.id) == ["b"])
+    #expect(s.reclaimable == 5)
+    #expect(s.total == 15)
+}

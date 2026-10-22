@@ -37,7 +37,7 @@ final class Spy: @unchecked Sendable {
 @MainActor @Test func checkSpaceNotifiesOnce() throws {
     let spy = Spy()
     let defaults = UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!
-    let m = AppModel(scan: { fatalError() }, cache: tempCache(), available: { 10_000_000_000 },
+    let m = AppModel(scan: { _ in fatalError() }, cache: tempCache(), available: { 10_000_000_000 },
                      notify: { spy.messages.append($0) }, alertSettings: { LowSpaceAlert(enabled: true, thresholdGB: 20) },
                      defaults: defaults)
     m.checkSpace()

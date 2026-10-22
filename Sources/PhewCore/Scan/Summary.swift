@@ -10,17 +10,18 @@ public struct Summary: Sendable {
     public let byTier: [Tier: Int64]
     public let total: Int64
     /// What Quick clean frees: the preselected items that are ready (no data loss, heavy,
-    /// opt-in or active project, nothing in use). Same number as the Quick clean button.
+    /// opt-in or active project, nothing in use) and not kept by the user. Same number as the
+    /// Quick clean button.
     public let reclaimable: Int64
     public let quickClean: [Item]
     public let groups: [GroupSummary]
 
-    public init(_ items: [Item]) {
+    public init(_ items: [Item], kept: Set<String> = []) {
         var byTier: [Tier: Int64] = [:]
         for item in items { byTier[item.target.tier, default: 0] += item.bytes }
         self.byTier = byTier
         total = items.reduce(0) { $0 + $1.bytes }
-        quickClean = items.filter { $0.preselected && $0.state == .ready }
+        quickClean = items.filter { $0.preselected && $0.state == .ready && !kept.contains($0.id) }
         reclaimable = quickClean.reduce(0) { $0 + $1.bytes }
         var order: [String] = []
         var byGroup: [String: [Item]] = [:]

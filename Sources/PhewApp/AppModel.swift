@@ -11,6 +11,13 @@ enum Screen: Equatable {
     case settings
 }
 
+enum CheckState { case off, on, mixed }
+
+struct LastClean: Codable, Equatable {
+    let freed: Int64
+    let date: Date
+}
+
 @MainActor @Observable
 final class AppModel {
     private(set) var snapshot: ScanSnapshot?
@@ -19,9 +26,13 @@ final class AppModel {
     var screen: Screen = .home
     var selection: Set<String> = []
     private(set) var lastReceipt: Receipt?
+    /// Preselected items the user unticked; Quick clean and new scans leave them unticked.
+    private(set) var kept: Set<String> = []
+    private(set) var lastClean: LastClean?
+    private(set) var scanStage: String?
     private var cleaning: Task<Void, Never>?
 
-    private let scan: @Sendable () async -> ScanSnapshot
+    private let scan: @Sendable (@escaping @Sendable (String) -> Void) async -> ScanSnapshot
     private let cache: ScanCache
     private let availableSpace: @Sendable () -> Int64
     private let running: RunningCheck
@@ -34,7 +45,7 @@ final class AppModel {
     private let dockerPoll: Duration
     private(set) var isStartingDocker = false
 
-    init(scan: @escaping @Sendable () async -> ScanSnapshot = AppModel.liveScan,
+    init(scan: @escaping @Sendable (@escaping @Sendable (String) -> Void) async -> ScanSnapshot = AppModel.liveScan,
          cache: ScanCache = ScanCache(),
          available: @escaping @Sendable () -> Int64 = { DiskSize.available() },
          running: RunningCheck = .live,
@@ -63,14 +74,16 @@ final class AppModel {
         self.execute = execute
         snapshot = cache.load().map(reconcile)
         self.available = available()
-        selection = Self.defaultSelection(snapshot?.items ?? [])
+        kept = Set(defaults.stringArray(forKey: "keptItems") ?? [])
+        lastClean = defaults.data(forKey: "lastClean").flatMap { try? JSONDecoder().decode(LastClean.self, from: $0) }
+        selection = defaultSelection(snapshot?.items ?? [])
     }
 
-    private static func defaultSelection(_ items: [Item]) -> Set<String> {
-        Set(items.filter { $0.preselected && $0.state == .ready }.map(\.id))
+    private func defaultSelection(_ items: [Item]) -> Set<String> {
+        Set(items.filter { $0.preselected && $0.state == .ready && !kept.contains($0.id) }.map(\.id))
     }
 
-    var summary: Summary { Summary(snapshot?.items ?? []) }
+    var summary: Summary { Summary(snapshot?.items ?? [], kept: kept) }
 
     var isStale: Bool {
         guard let date = snapshot?.date else { return true }
@@ -81,16 +94,17 @@ final class AppModel {
         // A scan during a clean would measure half-deleted folders and race the receipt.
         guard !isScanning, !isCleaning else { return }
         isScanning = true
-        let result = await scan()
+        let result = await scan { stage in Task { @MainActor in if self.isScanning { self.scanStage = stage } } }
         let oldIDs = Set(snapshot?.items.map(\.id) ?? [])
         snapshot = result
         // Keep what the user ticked or unticked; only new items get the default selection.
         let newIDs = Set(result.items.map(\.id))
         selection = selection.intersection(newIDs)
-            .union(Self.defaultSelection(result.items.filter { !oldIDs.contains($0.id) }))
+            .union(defaultSelection(result.items.filter { !oldIDs.contains($0.id) }))
         available = availableSpace()
         try? cache.save(result)
         isScanning = false
+        scanStage = nil
         checkSpace()
     }
 
@@ -110,17 +124,59 @@ final class AppModel {
     var isCleaning: Bool { cleaning != nil }
 
     func items(in group: String) -> [Item] {
-        snapshot?.items.filter { $0.target.group == group } ?? []
+        (snapshot?.items.filter { $0.target.group == group } ?? []).sorted { $0.bytes > $1.bytes }
     }
 
     func projectItems(_ root: URL) -> [Item] {
         snapshot?.items.filter { $0.project?.root == root } ?? []
     }
 
-    /// Selects every cleanable item of the project, or clears them when all are selected.
+    /// In-use items can be picked; the confirm view then says why they are skipped.
+    func isSelectable(_ item: Item) -> Bool {
+        if case .locked = item.state { return false }
+        return item.state != .unreadable
+    }
+
+    /// Selects every selectable item, or clears them all when all are selected.
+    func toggleAll(_ items: [Item]) {
+        let ids = items.filter(isSelectable).map(\.id)
+        setSelected(ids, !ids.allSatisfy(selection.contains))
+    }
+
+    func selectionState(_ items: [Item]) -> CheckState {
+        let ids = items.filter(isSelectable).map(\.id)
+        let chosen = ids.filter(selection.contains).count
+        return chosen == 0 ? .off : chosen == ids.count ? .on : .mixed
+    }
+
     func toggleProject(_ root: URL) {
-        let ids = projectItems(root).filter { $0.state != .unreadable }.map(\.id)
-        if ids.allSatisfy(selection.contains) { selection.subtract(ids) } else { selection.formUnion(ids) }
+        toggleAll(projectItems(root))
+    }
+
+    func keptTitle(_ id: String) -> String {
+        snapshot?.items.first { $0.id == id }?.target.title ?? id
+    }
+
+    func unkeep(_ id: String) {
+        kept.remove(id)
+        saveKept()
+    }
+
+    /// Every tick and untick goes through here: unticking a preselected item keeps it out of
+    /// Quick clean, ticking it again lets it back in.
+    private func setSelected(_ ids: some Sequence<String>, _ on: Bool) {
+        let preselected = Set(snapshot?.items.filter(\.preselected).map(\.id) ?? [])
+        for id in ids {
+            if on { selection.insert(id); kept.remove(id) } else {
+                selection.remove(id)
+                if preselected.contains(id) { kept.insert(id) }
+            }
+        }
+        saveKept()
+    }
+
+    private func saveKept() {
+        defaults.set(kept.sorted(), forKey: "keptItems")
     }
 
     /// Everything that is safe to clean right now, behind the usual confirmation.
@@ -146,6 +202,10 @@ final class AppModel {
             }
             apply(receipt)
             lastReceipt = receipt
+            if receipt.measuredTotal > 0 {
+                lastClean = LastClean(freed: receipt.measuredTotal, date: .now)
+                defaults.set(try? JSONEncoder().encode(lastClean), forKey: "lastClean")
+            }
             screen = .receipt(receipt)
             cleaning = nil
         }
@@ -197,7 +257,7 @@ final class AppModel {
                 snap.items += items
                 snap.dockerOffBytes = nil
                 snapshot = snap
-                selection.formUnion(Self.defaultSelection(items))
+                selection.formUnion(defaultSelection(items))
                 try? cache.save(snap)
                 return
             }
@@ -206,7 +266,7 @@ final class AppModel {
     }
 
     func toggle(_ id: String) {
-        if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
+        setSelected([id], !selection.contains(id))
     }
 
     nonisolated static func liveReconcile(_ snapshot: ScanSnapshot) -> ScanSnapshot {
@@ -215,20 +275,23 @@ final class AppModel {
                                    projectRoots: loaded.config.projectRoots.map { URL(fileURLWithPath: $0) })
     }
 
-    nonisolated static func liveScan() async -> ScanSnapshot {
+    nonisolated static func liveScan(progress: @escaping @Sendable (String) -> Void) async -> ScanSnapshot {
         let loaded = ConfigStore().load()
         let targets = Catalog.all(custom: loaded.validTargets)
         let roots = loaded.config.projectRoots.map { URL(fileURLWithPath: $0) }
         async let tools = ToolScan.all(projectRoots: roots)
+        progress("Caches and build folders")
         var items = await TargetScanner().scan(targets, alsoOwnedBy: targets)
         var skipped = 0
         var unreadable: [URL] = []
         if !roots.isEmpty {
+            progress("Project folders")
             let projects = await ProjectScanner(roots: roots, dormantDays: loaded.config.dormantDays).scan()
             items += projects.items
             skipped = projects.skipped.count
             unreadable = projects.unreadable
         }
+        progress("Docker, simulators and versions")
         let toolResult = await tools
         items += toolResult.items
         var dockerOff: Int64?

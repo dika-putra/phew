@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5.5-polish.md
 Branch: m5.5-polish (from main; the M6 plan waits on m6-release)
-Next step: Task 1, Step 1 (M5.5)
+Next step: Task 2, Step 1 (M5.5)
 
 ## M5.5 decisions (UI review, 2026-10-22)
 
@@ -101,3 +101,4 @@ Next step: Task 1, Step 1 (M5.5)
 | 2026-10-22 | M5 | Task 8: milestone check | Read the fvm global next to its versions folder | user checked Versions and Start Docker; nvm use detection added |
 | 2026-10-22 | M5 | Final review fixes | Fix M5 review findings | 1 Critical + 4 Important fixed; minors in Carry into M6 |
 | 2026-10-22 | M5.5 | Task 0: plan | Add M5.5 plan | UI review decisions recorded; logo concept I chosen |
+| 2026-10-22 | M5.5 | Task 1: model | Add kept items, last clean, scan stage and group selection | kept items in UserDefaults (app only); locked items no longer selectable via project checkbox |
