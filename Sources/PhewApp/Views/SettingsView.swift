@@ -126,7 +126,7 @@ struct SettingsView: View {
             }
             .font(.subheadline)
             Button("Quit Phew") { NSApp.terminate(nil) }
-                .keyboardShortcut("q")
+                .help("Quit Phew (⌘Q)")
                 .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
