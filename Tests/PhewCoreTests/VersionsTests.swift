@@ -95,3 +95,16 @@ func realVersions() async {
         #expect(items.first?.state == .inUse(app: "zsh"))
     }
 }
+
+@Test func fvmGlobalFollowsCustomCacheDir() async throws {
+    try await withTempDirAsync { home in
+        let cache = home.appending(path: "sdk/fvm")
+        try dirs(home, ["sdk/fvm/versions/3.24.5"])
+        try FileManager.default.createSymbolicLink(at: cache.appending(path: "default"),
+                                                   withDestinationURL: cache.appending(path: "versions/3.24.5"))
+        let items = await Versions.items(home: home, pins: Pins(),
+                                         run: stub(["fvm list": "Cache directory:  \(cache.appending(path: "versions").path)\n"]),
+                                         running: RunningCheck(runningBundleIDs: { [:] }, processMatches: { _ in false }))
+        #expect(items.first { $0.id == "fvm:3.24.5" }?.state == .locked("fvm global"))
+    }
+}

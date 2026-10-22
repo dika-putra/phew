@@ -26,7 +26,8 @@ public enum Versions {
         let cacheLine = listed?.stdout.split(separator: "\n").first { $0.hasPrefix("Cache directory:") }
         let folder = cacheLine.map { URL(fileURLWithPath: $0.dropFirst("Cache directory:".count).trimmingCharacters(in: .whitespaces)) }
             ?? home.appending(path: "fvm/versions")
-        let global = (try? FileManager.default.destinationOfSymbolicLink(atPath: home.appending(path: "fvm/default").path))
+        // fvm keeps the global version as a "default" symlink next to the versions folder.
+        let global = (try? FileManager.default.destinationOfSymbolicLink(atPath: folder.deletingLastPathComponent().appending(path: "default").path))
             .map { URL(fileURLWithPath: $0).lastPathComponent }
         return versionFolders(folder).map { dir in
             let v = dir.lastPathComponent

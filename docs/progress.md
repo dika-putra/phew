@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5-tools.md
 Branch: m5-tools
-Next step: Task 8: user check (M5)
+Next step: Final review of m5-tools, then M6 plan
 
 ## Carry into M5 (deferred from the M2, M3 and M4 reviews)
 
@@ -72,3 +72,4 @@ Next step: Task 8: user check (M5)
 | 2026-10-22 | M5 | Task 6: version managers | Add fvm, nvm and rustup versions |  |
 | 2026-10-22 | M5 | Task 7: wiring and minors | Show tool items in the CLI and the app | phew versions; Docker off row with Start Docker; carried M4 minors fixed |
 | 2026-10-22 | M5 | Task 8 fix: version in use | Treat a version as in use when a process has it on PATH | nvm use in a terminal now blocks removing that version |
+| 2026-10-22 | M5 | Task 8: milestone check | Read the fvm global next to its versions folder | user checked Versions and Start Docker; nvm use detection added |
