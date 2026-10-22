@@ -73,8 +73,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         // The popover size is set by hand and the popover is re-anchored to the icon after each
         // change: with automatic sizing, a size change while shown made it jump to the screen edge.
+        // Solid background: the popover's translucent material turned grey and low-contrast over
+        // a dark wallpaper in Light mode.
         let content = ContentView(model: model)
             .frame(width: 360)
+            .background(Color(nsColor: .windowBackgroundColor))
             .fixedSize(horizontal: false, vertical: true)
             .background(GeometryReader { geo in Color.clear.preference(key: PopoverSizeKey.self, value: geo.size) })
             .onPreferenceChange(PopoverSizeKey.self) { [weak self] size in
