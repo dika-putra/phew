@@ -1,0 +1,21 @@
+       v16.20.2 *
+->      v24.1.0 *
+default -> 24.1.0 (-> v24.1.0 *)
+iojs -> N/A (default)
+node -> stable (-> v24.1.0 *) (default)
+stable -> 24.1 (-> v24.1.0 *) (default)
+unstable -> N/A (default)
+lts/* -> lts/krypton (-> N/A)
+lts/argon -> v4.9.1 (-> N/A)
+lts/boron -> v6.17.1 (-> N/A)
+lts/carbon -> v8.17.0 (-> N/A)
+lts/dubnium -> v10.24.1 (-> N/A)
+lts/erbium -> v12.22.12 (-> N/A)
+lts/fermium -> v14.21.3 (-> N/A)
+lts/gallium -> v16.20.2 *
+lts/hydrogen -> v18.20.8 (-> N/A)
+lts/iron -> v20.20.2 (-> N/A)
+lts/jod -> v22.23.3 (-> N/A)
+lts/krypton -> v24.21.0 (-> N/A)
+CURRENT=v24.1.0
+DEFAULT=v24.1.0
