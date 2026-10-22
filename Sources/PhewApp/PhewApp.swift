@@ -32,6 +32,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             return
         }
         setUpStatusItem()
+        applyAppearance()
+        // The Appearance picker writes UserDefaults; apply it to the popover right away.
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.applyAppearance() }
+        }
         scheduler.start { [model] in await model.refresh() }
         if model.isStale { Task { await model.refresh() } }
         UNUserNotificationCenter.current().delegate = self
@@ -43,6 +48,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
         // PHEW_PREVIEW=1 shows the popover content in a normal window (manual checks).
         if ProcessInfo.processInfo.environment["PHEW_PREVIEW"] != nil { showPreviewWindow() }
+    }
+
+    /// SwiftUI's preferredColorScheme does not change an NSPopover's own appearance, so the
+    /// choice is applied app-wide. nil follows the system.
+    private func applyAppearance() {
+        let name: NSAppearance.Name? = switch Appearance(rawValue: UserDefaults.standard.string(forKey: "appearance") ?? "") {
+        case .light: .aqua
+        case .dark: .darkAqua
+        default: nil
+        }
+        let appearance = name.flatMap(NSAppearance.init(named:))
+        if NSApp.appearance != appearance { NSApp.appearance = appearance }
     }
 
     private func setUpStatusItem() {
@@ -109,10 +126,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
 struct ContentView: View {
     @Bindable var model: AppModel
-    @AppStorage("appearance") private var appearance = Appearance.system.rawValue
 
     var body: some View {
-        screen.preferredColorScheme(Appearance(rawValue: appearance)?.scheme)
+        screen
     }
 
     @ViewBuilder private var screen: some View {

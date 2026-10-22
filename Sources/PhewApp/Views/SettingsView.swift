@@ -5,13 +5,6 @@ import SwiftUI
 enum Appearance: String, CaseIterable {
     case system = "System", light = "Light", dark = "Dark"
 
-    var scheme: ColorScheme? {
-        switch self {
-        case .system: nil
-        case .light: .light
-        case .dark: .dark
-        }
-    }
 }
 
 struct SettingsView: View {
