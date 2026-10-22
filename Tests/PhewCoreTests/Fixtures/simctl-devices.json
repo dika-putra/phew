@@ -1,0 +1,19 @@
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-18-5" : [
+      { "udid" : "D1", "name" : "iPhone 16", "state" : "Booted", "isAvailable" : true,
+        "dataPath" : "/Users/test/Library/Developer/CoreSimulator/Devices/D1/data" },
+      { "udid" : "D2", "name" : "iPhone 16 Pro", "state" : "Shutdown", "isAvailable" : true,
+        "dataPath" : "/Users/test/Library/Developer/CoreSimulator/Devices/D2/data" }
+    ],
+    "com.apple.CoreSimulator.SimRuntime.iOS-17-0" : [
+      { "udid" : "D3", "name" : "iPhone 15", "state" : "Shutdown", "isAvailable" : true,
+        "dataPath" : "/Users/test/Library/Developer/CoreSimulator/Devices/D3/data" }
+    ],
+    "com.apple.CoreSimulator.SimRuntime.iOS-16-4" : [
+      { "udid" : "D4", "name" : "iPhone 14", "state" : "Shutdown", "isAvailable" : false,
+        "availabilityError" : "runtime profile not found",
+        "dataPath" : "/Users/test/Library/Developer/CoreSimulator/Devices/D4/data" }
+    ]
+  }
+}

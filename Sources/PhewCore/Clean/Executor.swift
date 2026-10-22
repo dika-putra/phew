@@ -7,6 +7,7 @@ public struct Executor: Sendable {
     let runCommand: @Sendable ([String]) async -> ShellResult?
     let dockerReclaimable: @Sendable (String) async -> Int64?
     let runtimePresent: @Sendable (String) async -> Bool?
+    let runAdmin: @Sendable ([URL]) async -> AdminResult
 
     public init(home: URL = FileManager.default.homeDirectoryForCurrentUser, running: RunningCheck = .live,
                 devProcesses: DevProcessCheck = .live,
@@ -14,7 +15,9 @@ public struct Executor: Sendable {
                     try? await Shell.run(cmd[0], Array(cmd.dropFirst()), timeout: .seconds(600))
                 },
                 dockerReclaimable: @escaping @Sendable (String) async -> Int64? = { _ in nil },
-                runtimePresent: @escaping @Sendable (String) async -> Bool? = { _ in nil }) {
+                runtimePresent: @escaping @Sendable (String) async -> Bool? = { _ in nil },
+                runAdmin: @escaping @Sendable ([URL]) async -> AdminResult = { _ in .failed("Needs an administrator") }) {
+        self.runAdmin = runAdmin
         self.home = home
         self.running = running
         self.devProcesses = devProcesses
@@ -30,7 +33,12 @@ public struct Executor: Sendable {
                          measured: 0, failures: [], skippedReason: $0.reason)
         }
         let dev = plan.items.contains { $0.project != nil } ? devProcesses.snapshot() : nil
+        var admin: [Item] = []
         for item in plan.items {
+            if item.removal == .adminDyld {
+                admin.append(item)
+                continue
+            }
             progress(item.target.title)
             // An app or dev server may have started since the plan was made.
             if let reason = Planner.skipReason(item, running: running, dev: dev) {
@@ -39,6 +47,10 @@ public struct Executor: Sendable {
                 continue
             }
             entries.append(await clean(item))
+        }
+        if !admin.isEmpty {
+            progress(admin[0].target.title)
+            entries += await cleanAdmin(admin)
         }
         return Receipt(entries: entries, freeBefore: freeBefore, freeAfter: DiskSize.available(for: home))
     }
@@ -55,7 +67,7 @@ public struct Executor: Sendable {
         case .steps(let steps):
             failures = await run(steps, guard_)
         case .adminDyld:
-            failures = ["Needs an administrator; not supported here."]
+            failures = ["Needs an administrator"] // handled by cleanAdmin; not reached
         }
         let measured: Int64
         if case .runtime(let uuid) = item.measure {
@@ -66,6 +78,27 @@ public struct Executor: Sendable {
         }
         return ReceiptEntry(itemID: item.id, title: item.target.title, claimed: item.bytes,
                             measured: measured, failures: failures, skippedReason: nil)
+    }
+
+    /// All admin items go to one privileged call, so the password is asked once per clean.
+    private func cleanAdmin(_ items: [Item]) async -> [ReceiptEntry] {
+        let before = items.map { DiskSize.allocated($0.urls).bytes }
+        let result = await runAdmin(items.flatMap(\.urls))
+        return zip(items, before).map { item, before in
+            switch result {
+            case .cancelled:
+                return ReceiptEntry(itemID: item.id, title: item.target.title, claimed: item.bytes, measured: 0,
+                                    failures: [], skippedReason: "Admin password not given")
+            case .failed(let message):
+                return ReceiptEntry(itemID: item.id, title: item.target.title, claimed: item.bytes,
+                                    measured: max(0, before - DiskSize.allocated(item.urls).bytes),
+                                    failures: [message], skippedReason: nil)
+            case .done:
+                return ReceiptEntry(itemID: item.id, title: item.target.title, claimed: item.bytes,
+                                    measured: max(0, before - DiskSize.allocated(item.urls).bytes),
+                                    failures: [], skippedReason: nil)
+            }
+        }
     }
 
     private func size(of item: Item) async -> Int64 {

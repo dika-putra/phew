@@ -45,3 +45,9 @@ final class Spy: @unchecked Sendable {
     #expect(spy.messages.count == 1)
     #expect(spy.messages.first?.hasPrefix("Only 10 GB left. Phew can free about") == true)
 }
+
+@Test func adminScriptQuotesPathsForShellAndAppleScript() {
+    let script = AdminDelete.script(cli: "/Applications/Phew.app/Contents/MacOS/phew",
+                                    paths: ["/Library/Developer/CoreSimulator/Caches/dyld/25G83/it's \"x\""])
+    #expect(script == #"do shell script "'/Applications/Phew.app/Contents/MacOS/phew' admin-delete-dyld '/Library/Developer/CoreSimulator/Caches/dyld/25G83/it'\\''s \"x\"'" with administrator privileges"#)
+}

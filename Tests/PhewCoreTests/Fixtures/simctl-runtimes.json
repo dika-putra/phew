@@ -1,0 +1,14 @@
+{
+  "8A2B0C1D-1111-4AAA-9BBB-000000000001" : {
+    "build" : "22F77", "deletable" : true, "identifier" : "8A2B0C1D-1111-4AAA-9BBB-000000000001",
+    "kind" : "Disk Image", "lastUsedAt" : "2026-09-01T08:30:00Z",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-18-5", "sizeBytes" : 8270000000,
+    "state" : "Ready", "version" : "18.5"
+  },
+  "8A2B0C1D-2222-4AAA-9BBB-000000000002" : {
+    "build" : "21A328", "deletable" : true, "identifier" : "8A2B0C1D-2222-4AAA-9BBB-000000000002",
+    "kind" : "Disk Image", "lastUsedAt" : "2025-11-10T12:00:00.123Z",
+    "runtimeIdentifier" : "com.apple.CoreSimulator.SimRuntime.iOS-17-0", "sizeBytes" : 7100000000,
+    "state" : "Ready", "version" : "17.0"
+  }
+}

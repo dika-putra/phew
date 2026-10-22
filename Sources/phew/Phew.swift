@@ -13,6 +13,6 @@ struct Phew: AsyncParsableCommand {
           phew --version
         """,
         version: AppInfo.versionLine,
-        subcommands: [ScanCommand.self, CleanCommand.self, ListCommand.self, ConfigCommand.self]
+        subcommands: [ScanCommand.self, CleanCommand.self, ListCommand.self, ConfigCommand.self, AdminDeleteCommand.self]
     )
 }

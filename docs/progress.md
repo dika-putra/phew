@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5-tools.md
 Branch: m5-tools
-Next step: Task 5, Step 1 (M5)
+Next step: Task 6, Step 1 (M5)
 
 ## Carry into M5 (deferred from the M2, M3 and M4 reviews)
 
@@ -68,3 +68,4 @@ Next step: Task 5, Step 1 (M5)
 | 2026-10-22 | M5 | Task 2: pins | Find pinned SDK versions in projects |  |
 | 2026-10-22 | M5 | Task 3: package caches | Add npm, pnpm, Go and Cargo caches | login shell for tool commands |
 | 2026-10-22 | M5 | Task 4: Docker | Add Docker build cache and images | Docker off -> info with Docker.raw allocated size |
+| 2026-10-22 | M5 | Task 5: simulators, runtimes, dyld | Add simulators, runtimes and dyld cache | synthetic simctl fixtures; admin via osascript (app) and sudo (CLI) |
