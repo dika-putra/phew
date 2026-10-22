@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m6-release.md
 Branch: m6-release
-Next step: Task 4, Step 2 (M6): user installs from the dmg on a second account or Mac; then Step 3 publish questions (tag, GitHub release, make public)
+Next step: Task 4, Step 2 (M6): user installs from the dmg on a second account or Mac; remaining publish question: make the repo public
 
 ## M5.5 decisions (UI review, 2026-10-22)
 
@@ -118,3 +118,4 @@ Next step: Task 4, Step 2 (M6): user installs from the dmg on a second account o
 | 2026-10-22 | M6 | Task 3: release build | Add make release | dist/Phew-0.1.0.zip 3.4 MB; lipo x86_64 arm64 for both; adhoc; shasum -c OK; unzip + xattr + phew --version direct and through a link OK |
 | 2026-10-22 | M6 | Task 3: dmg | Add a dmg to make release | user asked for dmg and zip; Phew-0.1.0.dmg 3.7 MB with an Applications link; hdiutil verify OK; install from the mounted dmg OK |
 | 2026-10-22 | M6 | Final review fixes | Fix M6 review findings | Critical: CLI sudo stopped (SIGTTIN) at the password prompt because Process starts a new process group; now posix_spawn in phew's group (checked under a pty: S+ not T). Important: custom targets only inside home and never in ~/.config; zip without xattrs (unzip kept ._ files, signature broke). Minors: no tty -> failure, README Quick clean and --yes wording, sudo .done test |
+| 2026-10-22 | M6 | Troubleshooting, release | Add troubleshooting to the README | user asked: GitHub release v0.1.0 (tag on main 7255891) with Phew-0.1.0.dmg and its sha256; repo still private; second-machine test not done yet |
