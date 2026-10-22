@@ -2,9 +2,9 @@
 
 Resume here: read this file, then the plan named in "Current plan", then continue at "Next step".
 
-Current plan: docs/superpowers/plans/2026-10-22-m5-tools.md
-Branch: m5-tools
-Next step: Merge m5-tools if the user agrees, then write the M6 plan (CLI polish, README, release zip, public repo)
+Current plan: docs/superpowers/plans/2026-10-22-m6-release.md
+Branch: m6-release
+Next step: Task 1, Step 1 (M6)
 
 ## Carry into M6 (deferred from the M2 to M5 reviews)
 
@@ -76,3 +76,4 @@ Next step: Merge m5-tools if the user agrees, then write the M6 plan (CLI polish
 | 2026-10-22 | M5 | Task 8 fix: version in use | Treat a version as in use when a process has it on PATH | nvm use in a terminal now blocks removing that version |
 | 2026-10-22 | M5 | Task 8: milestone check | Read the fvm global next to its versions folder | user checked Versions and Start Docker; nvm use detection added |
 | 2026-10-22 | M5 | Final review fixes | Fix M5 review findings | 1 Critical + 4 Important fixed; minors in Carry into M6 |
+| 2026-10-22 | M6 | Task 0: plan | Add M6 plan | m5-tools merged to main |
