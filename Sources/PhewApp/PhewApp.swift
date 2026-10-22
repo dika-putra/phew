@@ -2,16 +2,18 @@ import PhewCore
 import SwiftUI
 import UserNotifications
 
+// Plain AppKit entry point, like dika-putra/heartbeat. A SwiftUI App needs at least one scene,
+// and the placeholder Settings scene showed up as an empty "Phew Settings" window.
+// The menu bar item is an NSStatusItem with an NSPopover (see AppDelegate), not a MenuBarExtra:
+// a MenuBarExtra window kept its bottom edge when its height changed and slid under the menu bar.
 @main
-struct PhewApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
-
-    // The menu bar item is an NSStatusItem with an NSPopover (see AppDelegate), not a
-    // MenuBarExtra: a MenuBarExtra window keeps its bottom edge when the content height
-    // changes, so it slid under the menu bar or floated mid-screen. An NSPopover stays
-    // anchored to the icon and resizes from the top. Same approach as dika-putra/heartbeat.
-    var body: some Scene {
-        Settings { EmptyView() }
+enum PhewMain {
+    @MainActor static func main() {
+        let app = NSApplication.shared
+        let delegate = AppDelegate()
+        app.delegate = delegate
+        app.setActivationPolicy(.accessory)
+        withExtendedLifetime(delegate) { app.run() }
     }
 }
 

@@ -61,3 +61,4 @@ Next step: Merge m4-menubar if the user agrees, then write the M5 plan (simulato
 | 2026-10-21 | M4 | Task 7: settings, About, alert | Add settings, About and low space alert | interactive checks moved to Task 8 with the user |
 | 2026-10-22 | M4 | Task 8: milestone check | Re-anchor the popover after resizing and share one checkbox style | user checked the app; UI changes from feedback: checkbox-only cleaning, Quick clean, Extra folders, folder icon, NSPopover |
 | 2026-10-22 | M4 | Final review fixes | Fix M4 review findings | 6 Important fixed; minors in Carry into M5 |
+| 2026-10-22 | M4 | Fix after review | Use a plain AppKit entry point | empty "Phew Settings" window came from the placeholder SwiftUI Settings scene |
