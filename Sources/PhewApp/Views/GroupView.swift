@@ -9,10 +9,10 @@ struct ItemRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Toggle("", isOn: Binding(get: { model.selection.contains(item.id) }, set: { _ in model.toggle(item.id) }))
-                .toggleStyle(.checkbox)
-                .labelsHidden()
-                .disabled(item.state == .unreadable)
+            Checkbox(state: model.selection.contains(item.id) ? .on : .off, label: "Select \(item.target.title)") {
+                model.toggle(item.id)
+            }
+            .disabled(item.state == .unreadable)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title ?? item.target.title).lineLimit(1).truncationMode(.middle)
                 Text([bytes(item.bytes), item.lastUsed.map { "used \(relative($0))" }].compactMap { $0 }.joined(separator: " · "))
@@ -133,12 +133,28 @@ struct ProjectCheckbox: View {
     var body: some View {
         let ready = model.projectItems(root).filter { $0.state != .unreadable }
         let chosen = ready.filter { model.selection.contains($0.id) }.count
-        let symbol = chosen == 0 ? "square" : chosen == ready.count ? "checkmark.square.fill" : "minus.square.fill"
-        Button { model.toggleProject(root) } label: {
-            Image(systemName: symbol).foregroundStyle(chosen == 0 ? Color.secondary : Color.accentColor)
+        Checkbox(state: chosen == 0 ? .off : chosen == ready.count ? .on : .mixed, label: "Select project") {
+            model.toggleProject(root)
+        }
+        .disabled(ready.isEmpty)
+    }
+}
+
+/// One checkbox look for items and projects (a native Toggle has no mixed state).
+struct Checkbox: View {
+    enum State { case off, on, mixed }
+    let state: State
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: state == .off ? "square" : state == .on ? "checkmark.square.fill" : "minus.square.fill")
+                .font(.system(size: 15))
+                .foregroundStyle(state == .off ? Color.secondary : Color.accentColor)
         }
         .buttonStyle(.borderless)
-        .disabled(ready.isEmpty)
-        .accessibilityLabel("Select project")
+        .accessibilityLabel(label)
+        .accessibilityValue(state == .on ? "checked" : state == .mixed ? "partly checked" : "unchecked")
     }
 }

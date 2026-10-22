@@ -49,10 +49,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         item.button?.action = #selector(togglePopover)
         statusItem = item
 
-        let host = NSHostingController(rootView: ContentView(model: model).frame(width: 360))
-        host.sizingOptions = .preferredContentSize
-        popover.contentViewController = host
+        // The popover size is set by hand and the popover is re-anchored to the icon after each
+        // change: with automatic sizing, a size change while shown made it jump to the screen edge.
+        let content = ContentView(model: model)
+            .frame(width: 360)
+            .fixedSize(horizontal: false, vertical: true)
+            .background(GeometryReader { geo in Color.clear.preference(key: PopoverSizeKey.self, value: geo.size) })
+            .onPreferenceChange(PopoverSizeKey.self) { [weak self] size in
+                MainActor.assumeIsolated { self?.resizePopover(to: size) }
+            }
+        popover.contentViewController = NSHostingController(rootView: content)
         popover.behavior = .transient
+        popover.animates = false
+    }
+
+    private func resizePopover(to size: CGSize) {
+        guard size.height > 0, popover.contentSize != size else { return }
+        popover.contentSize = size
+        if popover.isShown, let button = statusItem?.button {
+            popover.positioningRect = button.bounds
+        }
     }
 
     @objc private func togglePopover() {
@@ -127,4 +143,9 @@ final class BackgroundScan {
         }
         scheduler = s
     }
+}
+
+private struct PopoverSizeKey: PreferenceKey {
+    static let defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) { value = nextValue() }
 }
