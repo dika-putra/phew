@@ -43,11 +43,21 @@ final class Spy: @unchecked Sendable {
     m.checkSpace()
     m.checkSpace()
     #expect(spy.messages.count == 1)
-    #expect(spy.messages.first?.hasPrefix("Only 10 GB left. Phew can free about") == true)
+    #expect(spy.messages.first == "Only 10 GB left.")
 }
 
 @Test func adminScriptQuotesPathsForShellAndAppleScript() {
     let script = AdminDelete.script(cli: "/Applications/Phew.app/Contents/MacOS/phew",
                                     paths: ["/Library/Developer/CoreSimulator/Caches/dyld/25G83/it's \"x\""])
     #expect(script == #"do shell script "'/Applications/Phew.app/Contents/MacOS/phew' admin-delete-dyld '/Library/Developer/CoreSimulator/Caches/dyld/25G83/it'\\''s \"x\"'" with administrator privileges"#)
+}
+
+@Test func cliInstallerKeepsForeignSymlink() throws {
+    let home = try tempHome()
+    defer { try? FileManager.default.removeItem(at: home) }
+    let bin = home.appending(path: ".local/bin")
+    try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(at: bin.appending(path: "phew"), withDestinationURL: URL(fileURLWithPath: "/src/phew/.build/debug/phew"))
+    #expect(throws: CLIInstallerError.self) { try CLIInstaller.install(appBundle: home.appending(path: "Phew.app"), home: home) }
+    #expect(try FileManager.default.destinationOfSymbolicLink(atPath: bin.appending(path: "phew").path) == "/src/phew/.build/debug/phew")
 }

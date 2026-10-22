@@ -42,3 +42,13 @@ private func dev(_ cwd: String?) -> DevProcessCheck {
     #expect(r.items[0].target.tier == .dataLoss)
     #expect(!r.items[0].preselected)
 }
+
+@Test func reconcileKeepsToolItems() {
+    func tool(_ id: String) -> Item {
+        Item(id: id, target: PathTarget(id: id, group: "Versions", title: id, tier: .redownload, paths: []),
+             urls: [], bytes: 1, lastUsed: nil, state: .ready)
+    }
+    let ids = ["npm", "pnpm", "go.modcache", "cargo.registry", "docker.images", "ios.runtimes:U", "ios.dyld:/x", "nvm:v16", "fvm:3.24.5", "rustup:stable"]
+    let snap = ScanSnapshot(date: .now, items: ids.map(tool), skippedProjects: 0, unreadable: [])
+    #expect(snap.reconciled(targets: [], projectRoots: []).items.map(\.id) == ids)
+}

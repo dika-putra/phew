@@ -11,6 +11,10 @@ enum Snapshots {
         var screens: [(String, Screen)] = [("home", .home), ("settings", .settings)]
         if let group = model.summary.groups.first?.id { screens.append(("group", .group(group))) }
         if model.summary.groups.contains(where: { $0.id == "Projects" }) { screens.append(("projects", .group("Projects"))) }
+        for name in ["Versions", "Docker"] where model.summary.groups.contains(where: { $0.id == name })
+            || (name == "Docker" && model.snapshot?.dockerOffBytes != nil) {
+            screens.append((name.lowercased(), .group(name)))
+        }
         if let group = model.summary.groups.first?.id {
             // Confirm and receipt are drawn from a plan only; nothing is deleted here.
             let plan = Planner.plan(Array(model.items(in: group).prefix(4)), running: .live)

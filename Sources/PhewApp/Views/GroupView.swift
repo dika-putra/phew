@@ -7,19 +7,28 @@ struct ItemRow: View {
     var title: String? = nil
     var indent: CGFloat = 0
 
+    private var isLocked: Bool {
+        if case .locked = item.state { return true }
+        return false
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Checkbox(state: model.selection.contains(item.id) ? .on : .off, label: "Select \(item.target.title)") {
                 model.toggle(item.id)
             }
-            .disabled(item.state == .unreadable)
+            .disabled(item.state == .unreadable || isLocked)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title ?? item.target.title).lineLimit(1).truncationMode(.middle)
+                if let note = item.note {
+                    Text(note).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+                }
                 Text([bytes(item.bytes), item.lastUsed.map { "used \(relative($0))" }].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption).foregroundStyle(.secondary)
                 HStack(spacing: 4) {
                     TierBadge(tier: item.target.tier)
                     if item.target.flags.contains(.heavy) { Badge(text: "Heavy", color: .secondary) }
+                    if item.target.flags.contains(.needsAdmin) { Badge(text: "Admin", color: .purple) }
                     StateBadge(state: item.state)
                 }
             }
@@ -44,6 +53,10 @@ struct GroupView: View {
             Divider()
             Scroll(maxHeight: 420) {
                 VStack(spacing: 0) {
+                    if group == "Docker", let off = model.snapshot?.dockerOffBytes {
+                        DockerOffRow(model: model, diskBytes: off)
+                        Divider()
+                    }
                     if group == "Projects" {
                         ProjectsList(model: model, items: items)
                     } else {
@@ -156,5 +169,26 @@ struct Checkbox: View {
         .buttonStyle(.borderless)
         .accessibilityLabel(label)
         .accessibilityValue(state == .on ? "checked" : state == .mixed ? "partly checked" : "unchecked")
+    }
+}
+
+/// Phew never starts Docker by itself; this row explains why there is nothing to clean yet.
+struct DockerOffRow: View {
+    @Bindable var model: AppModel
+    let diskBytes: Int64
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Docker is off · \(bytes(diskBytes)) in Docker's disk.")
+            Text("Start Docker to see and clean images and build cache.").font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Button(model.isStartingDocker ? "Starting Docker…" : "Start Docker") { Task { await model.startDocker() } }
+                    .controlSize(.small)
+                    .disabled(model.isStartingDocker)
+                if model.isStartingDocker { ProgressView().controlSize(.small) }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
     }
 }

@@ -64,3 +64,11 @@ func printProjects(_ scan: ProjectScan) {
     if byRoot.isEmpty { print("  nothing to clean") }
     scan.unreadable.forEach { warn("Can't read \($0.path)") }
 }
+
+func scanTools() async -> ToolScanResult {
+    let roots = ConfigStore().load().config.projectRoots.map { URL(fileURLWithPath: $0) }
+    status("Checking tools…")
+    return await ToolScan.all(projectRoots: roots)
+}
+
+let dockerOffText = "Docker is off. Start Docker to see and clean images and build cache."

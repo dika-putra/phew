@@ -155,7 +155,8 @@ struct SettingsView: View {
     private func setLaunchAtLogin(_ on: Bool) {
         do {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-            loginError = nil
+            loginError = SMAppService.mainApp.status == .requiresApproval
+                ? "Approve Phew in System Settings > General > Login Items." : nil
         } catch {
             loginError = error.localizedDescription
         }

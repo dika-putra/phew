@@ -43,6 +43,20 @@ struct HomeView: View {
                                 .buttonStyle(.plain)
                             Divider()
                         }
+                        if let off = snapshot.dockerOffBytes, !model.summary.groups.contains(where: { $0.id == "Docker" }) {
+                            Button { model.screen = .group("Docker") } label: {
+                                HStack {
+                                    Text("Docker")
+                                    Spacer()
+                                    Text("off · \(bytes(off))").foregroundStyle(.secondary)
+                                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                                }
+                                .contentShape(Rectangle())
+                                .padding(.horizontal, 12).padding(.vertical, 8)
+                            }
+                            .buttonStyle(.plain)
+                            Divider()
+                        }
                         if !snapshot.items.contains(where: { $0.project != nil }) && !hasRoots {
                             Button { model.screen = .settings } label: {
                                 Label("Add project folder", systemImage: "folder.badge.plus")
@@ -54,8 +68,10 @@ struct HomeView: View {
                     }
                 }
             } else {
-                ProgressView(model.isScanning ? "Scanning your Mac…" : "No scan yet")
-                    .padding(24)
+                Group {
+                    if model.isScanning { ProgressView("Scanning your Mac…") } else { Text("No scan yet. Press Refresh.") }
+                }
+                .padding(24)
             }
         }
     }

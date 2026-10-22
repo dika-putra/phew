@@ -187,3 +187,12 @@ public struct Executor: Sendable {
         (error as? PathGuardError).map { "refused, \($0)" } ?? error.localizedDescription
     }
 }
+
+extension Executor {
+    /// The executor with real tools: Docker and simulator runtimes are measured with their own CLIs.
+    public static func live(runAdmin: @escaping @Sendable ([URL]) async -> AdminResult) -> Executor {
+        Executor(dockerReclaimable: { await Docker.reclaimable(for: $0) },
+                 runtimePresent: { await Simulators.runtimePresent($0) },
+                 runAdmin: runAdmin)
+    }
+}

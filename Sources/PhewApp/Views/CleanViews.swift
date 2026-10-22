@@ -20,6 +20,9 @@ struct ConfirmView: View {
                                 TierBadge(tier: item.target.tier)
                                 Text(bytes(item.bytes)).foregroundStyle(.secondary)
                             }
+                            if let note = item.note {
+                                Text(note).font(.caption).foregroundStyle(.secondary)
+                            }
                             if item.target.tier == .dataLoss {
                                 Text("Deletes data you can't get back.").font(.caption).foregroundStyle(.red)
                             }
@@ -31,13 +34,19 @@ struct ConfirmView: View {
             }
             if !plan.skipped.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Skipped, in use").fontWeight(.semibold)
+                    Text("Skipped").fontWeight(.semibold)
                     ForEach(plan.skipped, id: \.item.id) { Text($0.reason).font(.caption) }
                 }
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(.orange.opacity(0.12))
+            }
+            if plan.needsAdmin {
+                Text("You'll be asked for your Mac password.")
+                    .font(.caption).foregroundStyle(.purple)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12).padding(.top, 8)
             }
             Text("Deleted for good, not moved to the Trash.")
                 .font(.caption).foregroundStyle(.secondary)

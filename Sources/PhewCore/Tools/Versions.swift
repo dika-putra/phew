@@ -61,7 +61,9 @@ public enum Versions {
                 : line?.contains("active") == true ? .locked("Active Rust toolchain") : .ready
             // Pins name the channel ("stable", "1.79.0"); toolchain folders add the host triple.
             let users = pins.rust.filter { name == $0.key || name.hasPrefix($0.key + "-") }.flatMap(\.value)
-            return item(id: "rustup:\(name)", title: "Rust \(name)", dir: dir, state: state, users: Set(users),
+            // "stable-aarch64-apple-darwin" -> "Rust stable"; the id keeps the full name.
+            let short = ["-aarch64-apple-darwin", "-x86_64-apple-darwin"].reduce(name) { $0.replacingOccurrences(of: $1, with: "") }
+            return item(id: "rustup:\(name)", title: "Rust \(short)", dir: dir, state: state, users: Set(users),
                         steps: [.run(loginShell("rustup toolchain uninstall \(shellQuote(name))"))])
         }
     }

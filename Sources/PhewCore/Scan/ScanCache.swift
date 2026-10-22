@@ -5,12 +5,15 @@ public struct ScanSnapshot: Codable, Sendable, Equatable {
     public var items: [Item]
     public var skippedProjects: Int
     public var unreadable: [URL]
+    /// Set when Docker Desktop is installed but not running: the size of its disk image.
+    public var dockerOffBytes: Int64?
 
-    public init(date: Date, items: [Item], skippedProjects: Int, unreadable: [URL]) {
+    public init(date: Date, items: [Item], skippedProjects: Int, unreadable: [URL], dockerOffBytes: Int64? = nil) {
         self.date = date
         self.items = items
         self.skippedProjects = skippedProjects
         self.unreadable = unreadable
+        self.dockerOffBytes = dockerOffBytes
     }
 }
 
@@ -47,6 +50,8 @@ extension ScanSnapshot {
                 let c = project.root.standardizedFileURL.pathComponents
                 return roots.contains { c.starts(with: $0) } ? item : nil
             }
+            // Tool items (versions, caches cleaned by a command) come from the tools, not the catalog.
+            if ToolScan.isToolItem(item.id) { return item }
             guard let target = byID[item.id] else { return nil }
             var updated = Item(id: item.id, target: target, urls: item.urls, bytes: item.bytes,
                                lastUsed: item.lastUsed, state: item.state)

@@ -29,18 +29,30 @@ final class AppModel {
     private let notify: @Sendable (String) -> Void
     private let alertSettings: @Sendable () -> LowSpaceAlert
     private let defaults: UserDefaults
+    private let openDocker: @Sendable () async -> Void
+    private let dockerScan: @Sendable () async -> DockerScan
+    private let dockerPoll: Duration
+    private(set) var isStartingDocker = false
 
     init(scan: @escaping @Sendable () async -> ScanSnapshot = AppModel.liveScan,
          cache: ScanCache = ScanCache(),
          available: @escaping @Sendable () -> Int64 = { DiskSize.available() },
          running: RunningCheck = .live,
          execute: @escaping @Sendable (CleanPlan, @escaping @Sendable (String) -> Void) async -> Receipt = {
-             await Executor().execute($0, progress: $1)
+             await Executor.live(runAdmin: { await AdminDelete.run($0) }).execute($0, progress: $1)
          },
          notify: @escaping @Sendable (String) -> Void = { Notifier.post($0) },
          alertSettings: @escaping @Sendable () -> LowSpaceAlert = { ConfigStore().load().config.lowSpaceAlert },
          defaults: UserDefaults = .standard,
-         reconcile: @Sendable (ScanSnapshot) -> ScanSnapshot = AppModel.liveReconcile) {
+         reconcile: @Sendable (ScanSnapshot) -> ScanSnapshot = AppModel.liveReconcile,
+         openDocker: @escaping @Sendable () async -> Void = { _ = try? await Shell.run("/usr/bin/open", ["-a", "Docker"]) },
+         dockerScan: @escaping @Sendable () async -> DockerScan = {
+             await Docker.scan(home: FileManager.default.homeDirectoryForCurrentUser)
+         },
+         dockerPoll: Duration = .seconds(3)) {
+        self.openDocker = openDocker
+        self.dockerScan = dockerScan
+        self.dockerPoll = dockerPoll
         self.notify = notify
         self.alertSettings = alertSettings
         self.defaults = defaults
@@ -66,7 +78,8 @@ final class AppModel {
     }
 
     func refresh() async {
-        guard !isScanning else { return }
+        // A scan during a clean would measure half-deleted folders and race the receipt.
+        guard !isScanning, !isCleaning else { return }
         isScanning = true
         let result = await scan()
         let oldIDs = Set(snapshot?.items.map(\.id) ?? [])
@@ -88,7 +101,8 @@ final class AppModel {
         var state = defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(LowSpaceAlertState.self, from: $0) }
             ?? LowSpaceAlertState()
         if state.shouldNotify(available: available, settings: alertSettings()) {
-            notify("Only \(bytes(available)) left. Phew can free about \(bytes(summary.reclaimable)).")
+            let free = summary.reclaimable
+            notify("Only \(bytes(available)) left." + (free > 0 ? " Phew can free about \(bytes(free))." : ""))
         }
         defaults.set(try? JSONEncoder().encode(state), forKey: key)
     }
@@ -165,6 +179,28 @@ final class AppModel {
         try? cache.save(snap)
     }
 
+    /// Opens Docker Desktop (only when the user asks) and waits up to 90 s for it to answer,
+    /// then replaces the "Docker is off" row with the Docker items.
+    func startDocker() async {
+        guard !isStartingDocker else { return }
+        isStartingDocker = true
+        defer { isStartingDocker = false }
+        await openDocker()
+        let tries = max(1, Int(Duration.seconds(90) / dockerPoll))
+        for _ in 0..<tries {
+            if case .running(let items) = await dockerScan(), var snap = snapshot {
+                snap.items.removeAll { $0.id.hasPrefix("docker.") }
+                snap.items += items
+                snap.dockerOffBytes = nil
+                snapshot = snap
+                selection.formUnion(Self.defaultSelection(items))
+                try? cache.save(snap)
+                return
+            }
+            try? await Task.sleep(for: dockerPoll)
+        }
+    }
+
     func toggle(_ id: String) {
         if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
     }
@@ -178,16 +214,21 @@ final class AppModel {
     nonisolated static func liveScan() async -> ScanSnapshot {
         let loaded = ConfigStore().load()
         let targets = Catalog.all(custom: loaded.validTargets)
+        let roots = loaded.config.projectRoots.map { URL(fileURLWithPath: $0) }
+        async let tools = ToolScan.all(projectRoots: roots)
         var items = await TargetScanner().scan(targets, alsoOwnedBy: targets)
         var skipped = 0
         var unreadable: [URL] = []
-        if !loaded.config.projectRoots.isEmpty {
-            let projects = await ProjectScanner(roots: loaded.config.projectRoots.map { URL(fileURLWithPath: $0) },
-                                                dormantDays: loaded.config.dormantDays).scan()
+        if !roots.isEmpty {
+            let projects = await ProjectScanner(roots: roots, dormantDays: loaded.config.dormantDays).scan()
             items += projects.items
             skipped = projects.skipped.count
             unreadable = projects.unreadable
         }
-        return ScanSnapshot(date: .now, items: items, skippedProjects: skipped, unreadable: unreadable)
+        let toolResult = await tools
+        items += toolResult.items
+        var dockerOff: Int64?
+        if case .off(let bytes) = toolResult.docker { dockerOff = bytes }
+        return ScanSnapshot(date: .now, items: items, skippedProjects: skipped, unreadable: unreadable, dockerOffBytes: dockerOff)
     }
 }

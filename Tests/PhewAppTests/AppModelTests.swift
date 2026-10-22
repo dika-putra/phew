@@ -204,3 +204,51 @@ private func receipt(for plan: CleanPlan) -> Receipt {
                      reconcile: { snap in var s = snap; s.items.removeAll { $0.id == "a" }; return s })
     #expect(m.snapshot?.items.map(\.id) == ["b"])
 }
+
+@MainActor @Test func refreshIgnoredWhileCleaning() async throws {
+    let gate = Gate()
+    let cache = tempCache()
+    try cache.save(ScanSnapshot(date: .now, items: [appItem("a")], skippedProjects: 0, unreadable: []))
+    let scans = Spy()
+    let m = makeModel(scan: { scans.messages.append("scan"); return ScanSnapshot(date: .now, items: [], skippedProjects: 0, unreadable: []) },
+                      cache: cache, available: { 1 }, execute: { plan, _ in
+                          await gate.enter()
+                          return Receipt(entries: [], freeBefore: 0, freeAfter: 0)
+                      })
+    m.selection = ["a"]
+    m.cleanSelected(in: "G")
+    m.confirm()
+    while await gate.calls == 0 { await Task.yield() }
+    await m.refresh()
+    #expect(scans.messages.isEmpty)
+    await gate.open()
+    await m.waitForClean()
+}
+
+@MainActor @Test func alertWithoutReclaimable() throws {
+    let spy = Spy()
+    let m = AppModel(scan: { fatalError() }, cache: tempCache(), available: { 10_000_000_000 },
+                     notify: { spy.messages.append($0) }, alertSettings: { LowSpaceAlert(enabled: true, thresholdGB: 20) },
+                     defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!, reconcile: { $0 })
+    m.checkSpace()
+    #expect(spy.messages == ["Only 10 GB left."])
+}
+
+@MainActor @Test func startDockerReplacesInfoWithItems() async throws {
+    let cache = tempCache()
+    try cache.save(ScanSnapshot(date: .now, items: [appItem("a")], skippedProjects: 0, unreadable: [], dockerOffBytes: 4_800_000_000))
+    let calls = Spy()
+    let docker = Item(id: "docker.buildcache", target: PathTarget(id: "docker.buildcache", group: "Docker", title: "B",
+                                                                   tier: .regenerates, paths: []),
+                      urls: [], bytes: 5, lastUsed: nil, state: .ready)
+    let m = AppModel(scan: { fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
+                     alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) },
+                     defaults: UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!, reconcile: { $0 },
+                     openDocker: { calls.messages.append("open") },
+                     dockerScan: { calls.messages.count < 3 ? { calls.messages.append("poll"); return .off(diskBytes: 1) }() : .running([docker]) },
+                     dockerPoll: .milliseconds(1))
+    await m.startDocker()
+    #expect(calls.messages.first == "open")
+    #expect(m.snapshot?.dockerOffBytes == nil)
+    #expect(m.snapshot?.items.map(\.id) == ["a", "docker.buildcache"])
+}

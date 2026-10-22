@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m5-tools.md
 Branch: m5-tools
-Next step: Task 7, Step 1 (M5)
+Next step: Task 8: user check (M5)
 
 ## Carry into M5 (deferred from the M2, M3 and M4 reviews)
 
@@ -70,3 +70,4 @@ Next step: Task 7, Step 1 (M5)
 | 2026-10-22 | M5 | Task 4: Docker | Add Docker build cache and images | Docker off -> info with Docker.raw allocated size |
 | 2026-10-22 | M5 | Task 5: simulators, runtimes, dyld | Add simulators, runtimes and dyld cache | synthetic simctl fixtures; admin via osascript (app) and sudo (CLI) |
 | 2026-10-22 | M5 | Task 6: version managers | Add fvm, nvm and rustup versions |  |
+| 2026-10-22 | M5 | Task 7: wiring and minors | Show tool items in the CLI and the app | phew versions; Docker off row with Start Docker; carried M4 minors fixed |

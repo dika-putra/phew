@@ -16,6 +16,7 @@ struct CleanCommand: AsyncParsableCommand {
           phew clean yarn --yes
           phew clean projects:~/Documents/Projects/old-app --dry-run
           phew clean projects --dry-run    (every dormant project item)
+          phew clean nvm:v16.20.2 npm
         """
     )
 
@@ -32,7 +33,14 @@ struct CleanCommand: AsyncParsableCommand {
         let all = loadTargets()
         let known = all.map(\.id)
         let projectIDs = ids.filter { $0 == "projects" || $0.hasPrefix("projects:") }
-        for id in ids where !known.contains(id) && !projectIDs.contains(id) {
+        let toolIDs = ids.filter { ToolScan.isToolItem($0) && !known.contains($0) }
+        var tools: ToolScanResult?
+        if !toolIDs.isEmpty { tools = await scanTools() }
+        let toolKnown = tools?.items.map(\.id) ?? []
+        for id in ids where !known.contains(id) && !projectIDs.contains(id) && !toolKnown.contains(id) {
+            if ToolScan.isToolItem(id), id.hasPrefix("docker."), case .off = tools?.docker {
+                throw ValidationError(dockerOffText)
+            }
             let hints = suggestions(for: id, in: known)
             throw ValidationError(hints.isEmpty
                 ? "Unknown id \"\(id)\". Run `phew list` to see ids."
@@ -45,6 +53,7 @@ struct CleanCommand: AsyncParsableCommand {
         let selected = all.filter { ids.contains($0.id) }
         status("Scanning…")
         var items = await TargetScanner().scan(selected, alsoOwnedBy: all)
+        items += tools?.items.filter { ids.contains($0.id) } ?? []
         if !projectIDs.isEmpty {
             guard let projects = await scanProjects() else {
                 throw ValidationError("No project folders. Add one: phew config --add-root ~/Documents/Projects")
@@ -76,7 +85,7 @@ struct CleanCommand: AsyncParsableCommand {
                 return
             }
         }
-        let receipt = await Executor().execute(plan) { print("Cleaning \($0)…") }
+        let receipt = await Executor.live(runAdmin: { await sudoAdminDelete($0) }).execute(plan) { print("Cleaning \($0)…") }
         printReceipt(receipt)
         if receipt.entries.contains(where: { !$0.failures.isEmpty }) { throw ExitCode(1) }
     }
@@ -84,6 +93,7 @@ struct CleanCommand: AsyncParsableCommand {
     private func printPlan(_ plan: CleanPlan) {
         for item in plan.items {
             print("  \(pad(formatBytes(item.bytes), 9))  \(pad(item.target.tier.rawValue, 11))  \(item.target.title)")
+            if let note = item.note { print("             \(note)") }
             if item.target.tier == .dataLoss {
                 print("             Deletes data you can't get back: \(item.target.title)")
             }
@@ -93,6 +103,7 @@ struct CleanCommand: AsyncParsableCommand {
             plan.skipped.forEach { print("  \($0.reason)") }
         }
         print("\nTotal: \(formatBytes(plan.expectedBytes)). Deleted for good, not moved to the Trash.")
+        if plan.needsAdmin { print("You'll be asked for your Mac password (sudo).") }
     }
 
     private func printReceipt(_ receipt: Receipt) {

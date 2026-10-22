@@ -11,9 +11,11 @@ enum CLIInstaller {
         let bin = home.appending(path: ".local/bin")
         let link = bin.appending(path: "phew")
         try fm.createDirectory(at: bin, withIntermediateDirectories: true)
-        if (try? fm.destinationOfSymbolicLink(atPath: link.path)) != nil {
+        if let destination = try? fm.destinationOfSymbolicLink(atPath: link.path) {
+            // Replace only a link from a Phew.app; a link to a dev build or another tool stays.
+            guard destination.hasSuffix("/Contents/MacOS/phew") else { throw CLIInstallerError.fileExists(link.path) }
             try fm.removeItem(at: link)
-        } else if fm.fileExists(atPath: link.path) {
+        } else if (try? fm.attributesOfItem(atPath: link.path)) != nil {
             throw CLIInstallerError.fileExists(link.path)
         }
         try fm.createSymbolicLink(at: link, withDestinationURL: appBundle.appending(path: "Contents/MacOS/phew"))

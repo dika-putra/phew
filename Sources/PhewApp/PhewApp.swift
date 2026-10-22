@@ -122,7 +122,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         Task { @MainActor in
-            self.model.screen = .home
+            // Mid-clean the popover keeps the cleaning screen; the receipt follows.
+            if !self.model.isCleaning { self.model.screen = .home }
             self.showPopover()
         }
         completionHandler()

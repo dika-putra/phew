@@ -26,11 +26,14 @@ struct ScanCommand: AsyncParsableCommand {
         let all = loadTargets()
         let targets = all.filter { group == nil || $0.group.caseInsensitiveCompare(group!) == .orderedSame }
         let wantsProjects = group == nil || group!.caseInsensitiveCompare("Projects") == .orderedSame
-        if targets.isEmpty, !wantsProjects, let group {
+        let toolGroups = ["Versions", "Docker", "Xcode", "Node", "Go", "Rust"]
+        if targets.isEmpty, !wantsProjects, let group, !toolGroups.contains(where: { $0.caseInsensitiveCompare(group) == .orderedSame }) {
             throw ValidationError("No group named \"\(group)\". Run `phew list` to see all groups.")
         }
         status("Scanning \(targets.count) targets…")
-        let items = await TargetScanner().scan(targets, alsoOwnedBy: all)
+        let tools = await scanTools()
+        let toolItems = tools.items.filter { group == nil || $0.target.group.caseInsensitiveCompare(group!) == .orderedSame }
+        let items = await TargetScanner().scan(targets, alsoOwnedBy: all) + toolItems
         let projects = wantsProjects ? await scanProjects() : nil
         let available = DiskSize.available()
         if json {
@@ -47,6 +50,10 @@ struct ScanCommand: AsyncParsableCommand {
             }
             print("  \(pad(item.id, idWidth))  \(pad(formatBytes(item.bytes), 9))  "
                 + "\(pad(item.target.tier.rawValue, 11))  \(pad(stateText(item.state), 26))  \(item.target.title)")
+            if let note = item.note { print("  \(pad("", idWidth))  \(note)") }
+        }
+        if case .off(let bytes) = tools.docker, group == nil || group!.caseInsensitiveCompare("Docker") == .orderedSame {
+            print("\nDocker\n  \(formatBytes(bytes)) in Docker's disk. \(dockerOffText)")
         }
         if wantsProjects {
             if let projects { printProjects(projects) } else {
