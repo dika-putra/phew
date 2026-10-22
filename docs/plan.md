@@ -247,19 +247,19 @@ Pin files are searched in the configured project roots. Removal for version mana
 
 ## 11. Menu bar app
 
-`NSStatusItem` with an `NSPopover` holding the SwiftUI content (changed in M4 from `MenuBarExtra`, whose window slid under the menu bar when its height changed). Menu bar icon only (no Dock icon, `LSUIElement`). Optional short text next to the icon: free space, off by default.
+`NSStatusItem` with an `NSPopover` holding the SwiftUI content (changed in M4 from `MenuBarExtra`, whose window slid under the menu bar when its height changed). Menu bar icon only (no Dock icon, `LSUIElement`): the logo as a template image (prompt chevron with a cursor that curls like a breath). Optional short text next to the icon: free space, off by default (deferred). Right-click opens a menu: Open Phew, Refresh, Settings…, Quit Phew. In the popover, ⌘, opens Settings and ⌘Q quits.
 
 Popover, top to bottom:
-1. Header: volume name, available space and a bar (`volumeAvailableCapacityForImportantUsage`, the number Finder shows, labeled "Available"). Refresh button. "Scanned 12 min ago" or a progress line while scanning.
+1. Header: volume name, available space and a bar (`volumeAvailableCapacityForImportantUsage`, the number Finder shows, labeled "Available"). Refresh button. "Scanned 12 min ago" or the current scan stage while scanning. "Last clean: X freed, Y ago" after a clean.
 2. Summary: reclaimable (exactly what Quick clean would clean: preselected items that are ready), the size per tier (Regenerates, Redownload, Data loss), and a Quick clean button that opens the usual confirmation.
 3. Group list (Xcode, Android, Flutter, Node, Python, PHP, Ruby, Java, Go, Rust, Docker, Editors, Versions, Projects, Custom), each with size. Click opens the group.
-4. Group view: one row per item with checkbox, title, size, last used, tier badge, state badge, and a folder icon (Show in Finder). Version manager rows show "used by N projects" and a lock icon. Project rows expand to their artifacts.
+4. Group view: items sorted by size, a tri-state checkbox in the header for the whole group, one two-line row per item: checkbox, title, size and a folder icon (Show in Finder), then tier badge, state badge and last used or note. Unticking a preselected item keeps it out of Quick clean until it is ticked again or removed from Settings > Kept items. Version manager rows show "used by N projects" and a lock icon. Project rows expand to their artifacts.
 5. Footer when something is checked: "Clean selected: N items, X GB".
-6. Gear: settings (appearance, project roots, dormant days, launch at login, low space alert on/off and threshold, custom targets, FDA status, install CLI).
+6. Gear: settings (appearance, project roots, kept items, dormant days, launch at login, low space alert on/off and threshold, custom targets, FDA status, install CLI, Quit).
 
 Clean flow inside the popover (no separate window):
 - In-use items are never cleaned and never preselected. They can still be ticked: the confirmation then lists them under "Skipped, in use" with what is running and what to do ("Xcode is running. Quit Xcode to clean DerivedData."). If an app starts between the confirmation and the delete, the item is skipped and listed in the receipt as "skipped, in use", not as a failure.
-- Clean (per item or bulk) shows an inline confirmation view: list of items, total size, tier per item. `dataLoss` items get a red line saying what is lost. `needsAdmin` items are confirmed and run separately with the admin prompt (`osascript ... with administrator privileges`).
+- Clean (per item or bulk) shows an inline confirmation view: list of items, total size, tier per item. Return cleans unless a `dataLoss` item is in the list; Esc goes back. `dataLoss` items get a red line saying what is lost. `needsAdmin` items are confirmed and run separately with the admin prompt (`osascript ... with administrator privileges`).
 - During the clean: progress per item. The popover may close; the clean continues and the menu bar icon shows activity.
 - Receipt: "Phew. 42.3 GB freed." using measured bytes, plus failures per item with the reason. Volume free space before and after.
 
@@ -336,6 +336,7 @@ Use temp folders. Never touch real data.
 | 3 | Project scanner with all rules, git-ignore check, dormant | `phew scan` lists projects under a fixture tree correctly |
 | 4 | Menu bar app MVP: light and dark mode, About, header, summary, groups, item rows with checkboxes, Clean selected with confirmation, receipt, FDA badge and button, Refresh, 2-hour background scan, low space notification | can clean a fixture target from the popover and the receipt matches the measured change |
 | 5 | Custom targets: simulators, runtimes, dyld, Docker, npm, pnpm, go, cargo; version managers | same behavior as `everclean.sh` for the ones it has |
+| 5.5 | UI polish to the macOS HIG (28 pt hit targets, 11 pt info text, 4.5:1 badge contrast, 4/8/12/16/24 spacing), status item menu, kept items, last clean, scan stage, logo | user checks every point in the app |
 | 6 | CLI polish (`--json`, `versions`, `list`, help text and examples for every command, install from the app and `make install`), README with screenshots and a CLI section, `NOTICE`, release zip with SHA-256 | clean install from the zip works on a second Mac or user account |
 
 ## 15. Distribution

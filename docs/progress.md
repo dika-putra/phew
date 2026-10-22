@@ -45,6 +45,9 @@ Next step: Task 5, Step 1 (M5.5)
 - "Used by" misses `.nvmrc` aliases (`lts/*`) and rust pins like `1.79` against `1.79.0-…`.
 - The osascript admin prompt is killed after 600 s.
 
+- README (M6 Task 2): open with `<picture>` using `docs/banner-dark.png` and `docs/banner-light.png` (2560x640, show at width 640).
+- README "Uninstall": quit Phew, turn off Launch at login in Settings, delete `/Applications/Phew.app`, `rm ~/.local/bin/phew` (if installed from Settings), `rm -rf ~/.config/phew ~/Library/Caches/com.dikaputra.phew`, `defaults delete com.dikaputra.phew`.
+
 ## Log
 
 | Date | Milestone | Task | Commit | Notes |
