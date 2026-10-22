@@ -381,3 +381,42 @@ private func sized(_ id: String, _ bytes: Int64, state: ItemState = .ready) -> I
     await task.value
     #expect(m.scanStage == nil)
 }
+
+// M5.5 review fixes
+
+@MainActor @Test func itemTurningReadyIsSelected() async {
+    let busy = Spy()
+    busy.messages = ["busy"]
+    let m = makeModel(scan: { _ in
+        ScanSnapshot(date: .now, items: [appItem("a", state: busy.messages.isEmpty ? .ready : .inUse(app: "Gradle"))],
+                     skippedProjects: 0, unreadable: [])
+    }, cache: tempCache(), available: { 1 })
+    await m.refresh()
+    #expect(m.selection.isEmpty)
+    busy.messages = []
+    await m.refresh()
+    #expect(m.selection == ["a"])
+    #expect(m.summary.quickClean.map(\.id) == ["a"])
+}
+
+@MainActor @Test func clearingGroupKeepsItsPreselectedItems() throws {
+    let m = try model(items: [appItem("a"), appItem("b", tier: .dataLoss)]) { plan, _ in receipt(for: plan) }
+    m.selection = ["a", "b"]
+    m.toggleAll(m.items(in: "G"))
+    #expect(m.kept == ["a"])
+}
+
+@MainActor @Test func startDockerRespectsKept() async throws {
+    let cache = tempCache()
+    let docker = Item(id: "docker.buildcache", target: PathTarget(id: "docker.buildcache", group: "Docker", title: "B",
+                                                                   tier: .regenerates, paths: []),
+                      urls: [], bytes: 5, lastUsed: nil, state: .ready)
+    try cache.save(ScanSnapshot(date: .now, items: [docker], skippedProjects: 0, unreadable: []))
+    let defaults = UserDefaults(suiteName: "phew-test-\(UUID().uuidString)")!
+    defaults.set(["docker.buildcache"], forKey: "keptItems")
+    let m = AppModel(scan: { _ in fatalError() }, cache: cache, available: { 1 }, notify: { _ in },
+                     alertSettings: { LowSpaceAlert(enabled: false, thresholdGB: 20) }, defaults: defaults,
+                     reconcile: { $0 }, openDocker: {}, dockerScan: { .running([docker]) }, dockerPoll: .milliseconds(1))
+    await m.startDocker()
+    #expect(m.selection.isEmpty)
+}

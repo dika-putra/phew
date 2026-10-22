@@ -95,12 +95,13 @@ final class AppModel {
         guard !isScanning, !isCleaning else { return }
         isScanning = true
         let result = await scan { stage in Task { @MainActor in if self.isScanning { self.scanStage = stage } } }
-        let oldIDs = Set(snapshot?.items.map(\.id) ?? [])
+        let wasReady = Dictionary((snapshot?.items ?? []).map { ($0.id, $0.state == .ready) }, uniquingKeysWith: { a, _ in a })
         snapshot = result
-        // Keep what the user ticked or unticked; only new items get the default selection.
+        // Keep what the user ticked or unticked. New items, and items that were in use or locked
+        // and are ready now, get the default selection, so the checkboxes match Quick clean.
         let newIDs = Set(result.items.map(\.id))
         selection = selection.intersection(newIDs)
-            .union(defaultSelection(result.items.filter { !oldIDs.contains($0.id) }))
+            .union(defaultSelection(result.items.filter { wasReady[$0.id] != true }))
         available = availableSpace()
         try? cache.save(result)
         isScanning = false
