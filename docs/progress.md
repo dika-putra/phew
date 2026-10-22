@@ -4,7 +4,7 @@ Resume here: read this file, then the plan named in "Current plan", then continu
 
 Current plan: docs/superpowers/plans/2026-10-22-m6-release.md
 Branch: m6-release
-Next step: Task 1, Step 1 (M6)
+Next step: Task 2, Step 1 (M6): ask the user for screenshots
 
 ## M5.5 decisions (UI review, 2026-10-22)
 
@@ -38,8 +38,6 @@ Next step: Task 1, Step 1 (M6)
 - Rust `target` is deleted directly; spec says `cargo clean` first (same result).
 - The prune list also skips `bin obj deps _build .build .gradle .terraform` beyond spec section 7.
 - Dev server check: the Gradle daemon's cwd is `~/.gradle/daemon`, so it never matches a project.
-- CLI: a cancelled or wrong sudo password for dyld shows as a failure, not "skipped".
-- Receipt failure text shows the full argv; with `zsh -lc` the first stderr line may be profile noise.
 - Docker: a `docker` CLI without Docker Desktop (colima, OrbStack stopped) shows "off · 0 B" and Start Docker fails silently; `docker info` can hold the tool scan up to 60 s.
 - nvm from Homebrew, or nvm with no default alias, locks every version; `NVM_DIR`, `RUSTUP_HOME`, `CARGO_HOME` are read from the GUI environment only.
 - "Used by" misses `.nvmrc` aliases (`lts/*`) and rust pins like `1.79` against `1.79.0-…`.
@@ -115,3 +113,4 @@ Next step: Task 1, Step 1 (M6)
 | 2026-10-22 | M5.5 | Task 5: spec, carry notes | Describe M5.5 UI changes in the spec | README banner and Uninstall carried into M6 |
 | 2026-10-22 | M5.5 | Final review fixes | Select items that become ready on refresh | 0 Critical, 1 Important fixed with test; minors tested or carried |
 | 2026-10-22 | M6 | Merge main | Merge branch 'main' into m6-release | brings M5.5 (UI polish, logo) into the M6 branch |
+| 2026-10-22 | M6 | Task 1: CLI help, sudo, failure text | Polish CLI help and step failure text | PhewCLITests added; sudo -v first; failure "<title>: <last stderr line>"; root help shows scan/clean/config |

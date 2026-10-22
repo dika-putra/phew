@@ -71,7 +71,7 @@ public struct Executor: Sendable {
         case .paths:
             failures = removePaths(item.urls, guard_)
         case .steps(let steps):
-            failures = await run(steps, guard_)
+            failures = await run(steps, guard_, title: item.target.title)
         case .adminDyld:
             failures = ["Needs an administrator"] // handled by cleanAdmin; not reached
         }
@@ -135,18 +135,18 @@ public struct Executor: Sendable {
     }
 
     /// Runs the steps in order and stops at the first one that fails.
-    private func run(_ steps: [Step], _ guard_: PathGuard) async -> [String] {
+    private func run(_ steps: [Step], _ guard_: PathGuard, title: String) async -> [String] {
         for step in steps {
             switch step {
             case .run(let cmd):
-                if let failure = await failure(of: cmd) { return [failure] }
+                if let failure = await failure(of: cmd, title: title) { return [failure] }
             case .remove(let url):
                 let failures = removePaths([url], guard_)
                 if !failures.isEmpty { return failures }
             case .retry(let times, let delay, let cmd):
                 var last: String?
                 for attempt in 1...max(times, 1) {
-                    last = await failure(of: cmd)
+                    last = await failure(of: cmd, title: title)
                     if last == nil { break }
                     if attempt < times { try? await Task.sleep(for: .seconds(delay)) }
                 }
@@ -156,12 +156,15 @@ public struct Executor: Sendable {
         return []
     }
 
-    private func failure(of cmd: [String]) async -> String? {
-        let name = cmd.joined(separator: " ")
-        guard let result = await runCommand(cmd) else { return "\(name): couldn't run" }
+    /// "<item title>: <last stderr line>". The last line is the error; with `zsh -lc` the first
+    /// lines can be shell profile output.
+    private func failure(of cmd: [String], title: String) async -> String? {
+        guard let result = await runCommand(cmd) else { return "\(title): couldn't run \(cmd[0])" }
         guard result.status != 0 else { return nil }
-        let line = result.stderr.split(separator: "\n").first.map(String.init) ?? "exit code \(result.status)"
-        return "\(name): \(line)"
+        let line = result.stderr.split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .last { !$0.isEmpty } ?? "exit code \(result.status)"
+        return "\(title): \(line)"
     }
 
     /// removeItem stops at the first error inside a folder. This removes what it can,

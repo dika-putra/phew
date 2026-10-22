@@ -43,8 +43,29 @@ private func executor(_ home: URL, _ spy: CommandSpy) -> Executor {
         spy.result = { _ in ShellResult(status: 1, stdout: "", stderr: "boom\nmore") }
         let item = stepItem(home, steps: [.run(["pnpm", "store", "prune"]), .run(["never"])])
         let receipt = await executor(home, spy).execute(Planner.plan([item], running: notRunning))
-        #expect(receipt.entries[0].failures == ["pnpm store prune: boom"])
+        #expect(receipt.entries[0].failures == ["pnpm store: more"])
         #expect(spy.calls.count == 1)
+    }
+}
+
+/// The last stderr line is the error; the first can be login shell noise (`zsh -lc`).
+@Test func failureTextNamesItem() async throws {
+    try await withTempDirAsync { home in
+        let spy = CommandSpy()
+        spy.result = { _ in ShellResult(status: 1, stdout: "", stderr: "noise\nERR real\n\n") }
+        let item = stepItem(home, steps: [.run(["zsh", "-lc", "pnpm store prune"])])
+        let receipt = await executor(home, spy).execute(Planner.plan([item], running: notRunning))
+        #expect(receipt.entries[0].failures == ["pnpm store: ERR real"])
+    }
+}
+
+@Test func failureWithoutStderrShowsExitCode() async throws {
+    try await withTempDirAsync { home in
+        let spy = CommandSpy()
+        spy.result = { _ in ShellResult(status: 3, stdout: "", stderr: "") }
+        let item = stepItem(home, steps: [.run(["false"])])
+        let receipt = await executor(home, spy).execute(Planner.plan([item], running: notRunning))
+        #expect(receipt.entries[0].failures == ["pnpm store: exit code 3"])
     }
 }
 

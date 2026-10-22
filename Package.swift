@@ -23,5 +23,8 @@ let package = Package(
         .executableTarget(name: "PhewApp", dependencies: ["PhewCore"]),
         .testTarget(name: "PhewCoreTests", dependencies: ["PhewCore"], resources: [.copy("Fixtures")]),
         .testTarget(name: "PhewAppTests", dependencies: ["PhewApp", "PhewCore"]),
+        .testTarget(name: "PhewCLITests", dependencies: [
+            "phew", "PhewCore", .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        ]),
     ]
 )

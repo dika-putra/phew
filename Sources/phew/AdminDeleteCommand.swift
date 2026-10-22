@@ -32,14 +32,20 @@ struct AdminDeleteCommand: ParsableCommand {
     }
 }
 
-/// `phew clean` asks for the password in the terminal with sudo.
-func sudoAdminDelete(_ urls: [URL]) async -> AdminResult {
+/// `phew clean` asks for the password in the terminal with sudo. `sudo -v` asks first, so a
+/// cancelled or wrong password reads as "Admin password not given", not as a failed delete.
+func sudoAdminDelete(_ urls: [URL], sudo: @Sendable ([String]) async -> Int32 = runSudo) async -> AdminResult {
+    guard await sudo(["-v"]) == 0 else { return .cancelled }
+    let status = await sudo([Bundle.main.executablePath ?? CommandLine.arguments[0], "admin-delete-dyld"] + urls.map(\.path))
+    return status == 0 ? .done : .failed("sudo admin-delete-dyld exited with \(status)")
+}
+
+@Sendable func runSudo(_ args: [String]) async -> Int32 {
     let p = Process()
     p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
-    p.arguments = [Bundle.main.executablePath ?? CommandLine.arguments[0], "admin-delete-dyld"] + urls.map(\.path)
-    let status: Int32 = await withCheckedContinuation { done in
+    p.arguments = args
+    return await withCheckedContinuation { done in
         p.terminationHandler = { done.resume(returning: $0.terminationStatus) }
         do { try p.run() } catch { done.resume(returning: -1) }
     }
-    return status == 0 ? .done : .failed("sudo admin-delete-dyld exited with \(status)")
 }
