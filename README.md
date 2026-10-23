@@ -7,7 +7,14 @@ Phew is a menu bar app and CLI for macOS that frees disk space taken by develope
 
 Phew has no telemetry. It never deletes anything without first showing the list of what goes, and it never prunes Docker volumes.
 
-Screenshots coming.
+<p>
+  <img src="docs/screenshots/home.png" alt="Home: free space, reclaimable size and groups" width="360">
+  <img src="docs/screenshots/projects.png" alt="Projects group with build folders per project" width="360">
+</p>
+<p>
+  <img src="docs/screenshots/versions.png" alt="Versions group with fvm, nvm and rustup versions" width="360">
+  <img src="docs/screenshots/settings.png" alt="Settings" width="360">
+</p>
 
 ## Install
 
